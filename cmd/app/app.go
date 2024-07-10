@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/common/middlewares"
 	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/config"
 	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/database"
 	"github.com/gorilla/mux"
@@ -33,6 +34,7 @@ func main() {
 
 	// Handler
 	handler := mux.NewRouter()
+	handler.Use(middlewares.Logging)
 	handler.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("Hello, world!")) })
 
 	// Run server
