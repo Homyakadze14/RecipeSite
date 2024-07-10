@@ -22,3 +22,5 @@ go.work
 go.work.sum
 
 configs/config.json
+static
+test.html

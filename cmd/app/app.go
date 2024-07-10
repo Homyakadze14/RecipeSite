@@ -11,6 +11,10 @@ import (
 	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/common/middlewares"
 	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/config"
 	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/database"
+	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/jsonvalidator"
+	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/session"
+	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/user"
+	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 )
 
@@ -26,16 +30,28 @@ func main() {
 	}
 
 	// Connect to database
-	_, err = database.New(cfg)
+	db, err := database.New(cfg)
 	log.Printf("Connect to database on %s", cfg.DB_Host)
 	if err != nil {
 		log.Fatalf("Databse failed: %s", err)
 	}
 
-	// Handler
+	// Main handler
 	handler := mux.NewRouter()
-	handler.Use(middlewares.Logging)
-	handler.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("Hello, world!")) })
+
+	v1 := handler.PathPrefix("/api/v1").Subrouter()
+	v1.Use(middlewares.Logging)
+
+	// Validator
+	vd := jsonvalidator.New(validator.New())
+
+	// Session manager
+	sm := session.NewSessionManager(db)
+
+	// User service
+	ur := user.NewRepository(db)
+	us := user.NewService(ur, vd, sm)
+	us.HandlFuncs(v1)
 
 	// Run server
 	addr := fmt.Sprintf("%s:%v", cfg.Address, cfg.Port)
