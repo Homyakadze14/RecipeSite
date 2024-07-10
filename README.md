@@ -1,6 +1,6 @@
 # RecipeSite
 
-#### Регистрация
+### Регистрация
 **URL:** api/v1/signup<br>
 **METHOD:** POST<br>
 **Принимает форму с полями:**<br>
@@ -17,7 +17,7 @@ about - текст(макс 1500 симв)<br>
 <br>
 **Ставит куку**
 
-#### Логин
+### Логин
 **URL:** api/v1/signin<br>
 **METHOD:** POST<br>
 **Принимает json с полями:**<br>
@@ -33,7 +33,7 @@ password - текст<br>
 <br>
 **Ставит куку**
 
-#### Логоут
+### Логоут
 **URL:** api/v1/logout<br>
 **METHOD:** POST<br>
 <br>
