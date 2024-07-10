@@ -33,7 +33,7 @@ password - текст<br>
 <br>
 **Ставит куку**
 
-## Логоут
+## Логаут
 **URL:** api/v1/logout<br>
 **METHOD:** POST<br>
 <br>
