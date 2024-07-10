@@ -1,4 +1,8 @@
 {
     "address": "localhost",
-    "port": 8080
+    "port": 8080,
+    "db_host": "localhost",
+    "db_name": "test",
+    "db_user": "admin",
+    "db_password": "admin"
 }

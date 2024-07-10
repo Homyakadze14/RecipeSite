@@ -6,8 +6,12 @@ import (
 )
 
 type Config struct {
-	Address string `json:"address"`
-	Port    int    `json:"port"`
+	Address     string `json:"address"`
+	Port        int    `json:"port"`
+	DB_Host     string `json:"db_host"`
+	DB_Name     string `json:"db_name"`
+	DB_User     string `json:"db_user"`
+	DB_Password string `json:"db_password"`
 }
 
 func Parse() (*Config, error) {

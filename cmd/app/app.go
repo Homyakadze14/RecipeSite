@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/config"
+	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/database"
 	"github.com/gorilla/mux"
 )
 
@@ -21,6 +22,13 @@ func main() {
 	cfg, err := config.Parse()
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	// Connect to database
+	_, err = database.New(cfg)
+	log.Printf("Connect to database on %s", cfg.DB_Host)
+	if err != nil {
+		log.Fatalf("Databse failed: %s", err)
 	}
 
 	// Handler
@@ -38,6 +46,6 @@ func main() {
 	log.Printf("Server start working on %s", addr)
 
 	if err := server.ListenAndServe(); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Server failed: %s", err)
 	}
 }
