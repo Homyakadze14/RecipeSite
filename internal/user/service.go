@@ -1,12 +1,16 @@
 package user
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"time"
 
+	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/images"
 	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/jsonvalidator"
 	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/session"
 	"github.com/gorilla/mux"
@@ -37,6 +41,10 @@ func (us *UserService) HandlFuncs(handler *mux.Router) {
 	logout := auth.Path("/logout").Subrouter()
 	logout.Use(us.sessionManager.AuthMiddleware)
 	logout.HandleFunc("", us.logout).Methods(http.MethodPost)
+
+	user := handler.PathPrefix("/user").Subrouter()
+	user.Use(us.sessionManager.AuthMiddleware)
+	user.HandleFunc("/{login}", us.update).Methods(http.MethodPut)
 }
 
 func (us *UserService) signup(w http.ResponseWriter, r *http.Request) {
@@ -208,79 +216,93 @@ func (us *UserService) logout(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, cookie)
 }
 
-//func (us *UserService) update(w http.ResponseWriter, r *http.Request) {
-//	// Icon
-//	file, _, err := r.FormFile("icon")
-//	if err != nil {
-//		slog.Error(err.Error())
-//		http.Error(w, "can't read file", http.StatusInternalServerError)
-//		return
-//	}
-//	defer file.Close()
-//
-//	// Parse form values to user
-//	usr := &User{
-//		Email:    r.FormValue("email"),
-//		Password: r.FormValue("password"),
-//		Login:    r.FormValue("login"),
-//		About:    r.FormValue("about"),
-//	}
-//
-//	// validate
-//	err = us.validator.Struct(usr)
-//	if err != nil {
-//		slog.Error(err.Error())
-//		http.Error(w, err.Error(), http.StatusBadRequest)
-//		return
-//	}
-//
-//	// save file to storage
-//	uri, err := images.Save(file)
-//	if err != nil {
-//		slog.Error(err.Error())
-//		http.Error(w, "can't save file", http.StatusInternalServerError)
-//		return
-//	}
-//	usr.Icon_URL = uri
-//
-//	// Hash password
-//	cryptPass, err := bcrypt.GenerateFromPassword([]byte(usr.Password), bcrypt.DefaultCost)
-//	if err != nil {
-//		slog.Error(err.Error())
-//		http.Error(w, "can't hash password", http.StatusInternalServerError)
-//		return
-//	}
-//	usr.Password = string(cryptPass)
-//
-//	// Save to storage
-//	id, err := us.usrRepo.Create(r.Context(), usr)
-//	if err != nil {
-//		imgerr := images.Remove(uri)
-//		if imgerr != nil {
-//			slog.Error(imgerr.Error())
-//			http.Error(w, imgerr.Error(), http.StatusBadRequest)
-//		}
-//
-//		slog.Error(err.Error())
-//		http.Error(w, err.Error(), http.StatusBadRequest)
-//		return
-//	}
-//
-//	// Create session
-//	sess, err := us.sessionManager.Create(r.Context(), id)
-//	if err != nil {
-//		slog.Error(err.Error())
-//		http.Error(w, "can't create session", http.StatusInternalServerError)
-//		return
-//	}
-//
-//	// Send cookie
-//	cookie := &http.Cookie{
-//		Name:    "session_id",
-//		Value:   sess.ID,
-//		Expires: time.Now().Add(90 * 60 * time.Hour),
-//		Path:    "/",
-//	}
-//
-//	http.SetCookie(w, cookie)
-//}
+func (us *UserService) update(w http.ResponseWriter, r *http.Request) {
+	// Get user from db
+	dbUser, err := us.usrRepo.GetByLogin(r.Context(), mux.Vars(r)["login"])
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			slog.Error(err.Error())
+			http.Error(w, "user not found", http.StatusNotFound)
+			return
+		}
+	}
+
+	// Get session
+	sess, err := us.sessionManager.GetSession(r)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "session error", http.StatusInternalServerError)
+		return
+	}
+
+	// Check who update user
+	if sess.UserID != dbUser.ID {
+		errNoPermMes := "no permission to update this user"
+		slog.Error(errNoPermMes)
+		http.Error(w, errNoPermMes, http.StatusBadRequest)
+		return
+	}
+
+	// Icon
+	file, _, err := r.FormFile("icon")
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "can't read file", http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	// Parse form values to user
+	usr := &UserUpdate{
+		Email: r.FormValue("email"),
+		Login: r.FormValue("login"),
+		About: r.FormValue("about"),
+	}
+
+	if usr.Email == "" {
+		usr.Email = dbUser.Email
+	}
+	if usr.Login == "" {
+		usr.Login = dbUser.Login
+	}
+
+	// validate
+	err = us.validator.Struct(usr)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// save file to storage
+	uri, err := images.Save(fmt.Sprintf("%v", dbUser.ID), file)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "can't save file", http.StatusInternalServerError)
+		return
+	}
+	oldIconUrl := dbUser.Icon_URL
+	usr.Icon_URL = uri
+
+	// Save to storage
+	err = us.usrRepo.Update(r.Context(), dbUser.ID, usr)
+	if err != nil {
+		imgerr := images.Remove(uri)
+		if imgerr != nil {
+			slog.Error(imgerr.Error())
+			http.Error(w, imgerr.Error(), http.StatusBadRequest)
+		}
+
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if oldIconUrl != "" {
+		err = images.Remove(oldIconUrl)
+		if err != nil {
+			slog.Error(err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+}

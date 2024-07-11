@@ -14,6 +14,13 @@ type User struct {
 	Created_at time.Time `json:"created_at"`
 }
 
+type UserUpdate struct {
+	Email    string `json:"email" validate:"email"`
+	Login    string `json:"login" validate:"min=3,max=20"`
+	Icon_URL string `json:"icon_url"`
+	About    string `json:"about" validate:"max=1500"`
+}
+
 type UserLogin struct {
 	Email    string `json:"email,omitempty"`
 	Login    string `json:"login,omitempty"`

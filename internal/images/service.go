@@ -1,13 +1,21 @@
 package images
 
 import (
+	"fmt"
 	"io"
 	"mime/multipart"
 	"os"
 )
 
-func Save(image multipart.File) (string, error) {
-	tempFile, err := os.CreateTemp("./static", "upload-*.jpg")
+func Save(path string, image multipart.File) (string, error) {
+	dirPath := fmt.Sprintf("./static/%s", path)
+
+	err := os.MkdirAll(dirPath, os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+
+	tempFile, err := os.CreateTemp(dirPath, "upload-*.jpg")
 	if err != nil {
 		return "", err
 	}
