@@ -7,12 +7,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/images"
 	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/jsonvalidator"
 	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/session"
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
 )
+
+const defaultIconURL = ""
 
 type UserService struct {
 	usrRepo        *UserRepository
@@ -35,25 +36,25 @@ func (us *UserService) HandlFuncs(handler *mux.Router) {
 
 	logout := auth.Path("/logout").Subrouter()
 	logout.Use(us.sessionManager.AuthMiddleware)
-	logout.HandleFunc("", us.logout)
+	logout.HandleFunc("", us.logout).Methods(http.MethodPost)
 }
 
 func (us *UserService) signup(w http.ResponseWriter, r *http.Request) {
-	// Icon
-	file, _, err := r.FormFile("icon")
+	// Read request body
+	data, err := io.ReadAll(r.Body)
 	if err != nil {
 		slog.Error(err.Error())
-		http.Error(w, "can't read file", http.StatusInternalServerError)
+		http.Error(w, "can't parse body", http.StatusInternalServerError)
 		return
 	}
-	defer file.Close()
 
-	// Parse form values to user
-	usr := &User{
-		Email:    r.FormValue("email"),
-		Password: r.FormValue("password"),
-		Login:    r.FormValue("login"),
-		About:    r.FormValue("about"),
+	// Parse json values to user
+	usr := &User{}
+	err = json.Unmarshal(data, &usr)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "can't parse json", http.StatusInternalServerError)
+		return
 	}
 
 	// validate
@@ -64,14 +65,16 @@ func (us *UserService) signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// save file to storage
-	uri, err := images.Save(file)
+	// validate
+	err = us.validator.Struct(usr)
 	if err != nil {
 		slog.Error(err.Error())
-		http.Error(w, "can't save file", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	usr.Icon_URL = uri
+
+	// set default icon
+	usr.Icon_URL = defaultIconURL
 
 	// Hash password
 	cryptPass, err := bcrypt.GenerateFromPassword([]byte(usr.Password), bcrypt.DefaultCost)
@@ -85,12 +88,6 @@ func (us *UserService) signup(w http.ResponseWriter, r *http.Request) {
 	// Save to storage
 	id, err := us.usrRepo.Create(r.Context(), usr)
 	if err != nil {
-		imgerr := images.Remove(uri)
-		if imgerr != nil {
-			slog.Error(imgerr.Error())
-			http.Error(w, imgerr.Error(), http.StatusBadRequest)
-		}
-
 		slog.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -210,3 +207,80 @@ func (us *UserService) logout(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, cookie)
 }
+
+//func (us *UserService) update(w http.ResponseWriter, r *http.Request) {
+//	// Icon
+//	file, _, err := r.FormFile("icon")
+//	if err != nil {
+//		slog.Error(err.Error())
+//		http.Error(w, "can't read file", http.StatusInternalServerError)
+//		return
+//	}
+//	defer file.Close()
+//
+//	// Parse form values to user
+//	usr := &User{
+//		Email:    r.FormValue("email"),
+//		Password: r.FormValue("password"),
+//		Login:    r.FormValue("login"),
+//		About:    r.FormValue("about"),
+//	}
+//
+//	// validate
+//	err = us.validator.Struct(usr)
+//	if err != nil {
+//		slog.Error(err.Error())
+//		http.Error(w, err.Error(), http.StatusBadRequest)
+//		return
+//	}
+//
+//	// save file to storage
+//	uri, err := images.Save(file)
+//	if err != nil {
+//		slog.Error(err.Error())
+//		http.Error(w, "can't save file", http.StatusInternalServerError)
+//		return
+//	}
+//	usr.Icon_URL = uri
+//
+//	// Hash password
+//	cryptPass, err := bcrypt.GenerateFromPassword([]byte(usr.Password), bcrypt.DefaultCost)
+//	if err != nil {
+//		slog.Error(err.Error())
+//		http.Error(w, "can't hash password", http.StatusInternalServerError)
+//		return
+//	}
+//	usr.Password = string(cryptPass)
+//
+//	// Save to storage
+//	id, err := us.usrRepo.Create(r.Context(), usr)
+//	if err != nil {
+//		imgerr := images.Remove(uri)
+//		if imgerr != nil {
+//			slog.Error(imgerr.Error())
+//			http.Error(w, imgerr.Error(), http.StatusBadRequest)
+//		}
+//
+//		slog.Error(err.Error())
+//		http.Error(w, err.Error(), http.StatusBadRequest)
+//		return
+//	}
+//
+//	// Create session
+//	sess, err := us.sessionManager.Create(r.Context(), id)
+//	if err != nil {
+//		slog.Error(err.Error())
+//		http.Error(w, "can't create session", http.StatusInternalServerError)
+//		return
+//	}
+//
+//	// Send cookie
+//	cookie := &http.Cookie{
+//		Name:    "session_id",
+//		Value:   sess.ID,
+//		Expires: time.Now().Add(90 * 60 * time.Hour),
+//		Path:    "/",
+//	}
+//
+//	http.SetCookie(w, cookie)
+//}

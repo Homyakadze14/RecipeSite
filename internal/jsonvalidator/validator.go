@@ -20,8 +20,13 @@ func New(v *validator.Validate) *JSONValidator {
 func (v *JSONValidator) Struct(s interface{}) error {
 	errs := v.Validate.Struct(s)
 
+	if errs == nil {
+		return nil
+	}
+
 	newErrMes := ""
 	for _, v := range errs.(validator.ValidationErrors) {
+		fmt.Print(v.Type())
 		if v.Tag() == "required" {
 			newErrMes += fmt.Sprintf("Field %s must be provided\n", v.Field())
 		}

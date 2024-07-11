@@ -6,12 +6,12 @@ import (
 
 type User struct {
 	ID         int       `json:"id,omitempty"`
-	Email      string    `json:"email,omitempty" validate:"required,email"`
-	Login      string    `json:"login,omitempty" validate:"required,min=3,max=20"`
-	Password   string    `json:"password,omitempty" validate:"required,min=8,max=50"`
-	Icon_URL   string    `json:"icon_url,omitempty"`
-	About      string    `json:"about,omitempty" validate:"required,max=1500"`
-	Created_at time.Time `json:"created_at,omitempty"`
+	Email      string    `json:"email" validate:"required,email"`
+	Login      string    `json:"login" validate:"required,min=3,max=20"`
+	Password   string    `json:"password" validate:"required,min=8,max=50"`
+	Icon_URL   string    `json:"icon_url"`
+	About      string    `json:"about" validate:"max=1500"`
+	Created_at time.Time `json:"created_at"`
 }
 
 type UserLogin struct {
