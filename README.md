@@ -45,7 +45,7 @@ password - текст<br>
 
 ## Обновление login, email, about, icon
 **URL:** api/v1/user/{login}<br>
-**METHOD:** POST<br>
+**METHOD:** PUT<br>
 **Принимает форму с полями:**<br>
 icon - текст<br>
 email - текст<br>
