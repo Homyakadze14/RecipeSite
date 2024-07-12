@@ -21,6 +21,10 @@ type UserUpdate struct {
 	About    string `json:"about" validate:"max=1500"`
 }
 
+type UserPasswordUpdate struct {
+	Password string `json:"password" validate:"required,min=8,max=50"`
+}
+
 type UserLogin struct {
 	Email    string `json:"email,omitempty"`
 	Login    string `json:"login,omitempty"`

@@ -45,6 +45,7 @@ func (us *UserService) HandlFuncs(handler *mux.Router) {
 	user := handler.PathPrefix("/user").Subrouter()
 	user.Use(us.sessionManager.AuthMiddleware)
 	user.HandleFunc("/{login}", us.update).Methods(http.MethodPut)
+	user.HandleFunc("/{login}/password", us.updatePassword).Methods(http.MethodPut)
 }
 
 func (us *UserService) signup(w http.ResponseWriter, r *http.Request) {
@@ -305,4 +306,71 @@ func (us *UserService) update(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
+}
+
+func (us *UserService) updatePassword(w http.ResponseWriter, r *http.Request) {
+	// Get user from db
+	dbUser, err := us.usrRepo.GetByLogin(r.Context(), mux.Vars(r)["login"])
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			slog.Error(err.Error())
+			http.Error(w, "user not found", http.StatusNotFound)
+			return
+		}
+	}
+
+	// Get session
+	sess, err := us.sessionManager.GetSession(r)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "session error", http.StatusInternalServerError)
+		return
+	}
+
+	// Check who update user
+	if sess.UserID != dbUser.ID {
+		errNoPermMes := "no permission to update this user"
+		slog.Error(errNoPermMes)
+		http.Error(w, errNoPermMes, http.StatusBadRequest)
+		return
+	}
+
+	// Read request body
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "can't parse body", http.StatusInternalServerError)
+		return
+	}
+
+	// Parse form values to user
+	updUsr := &UserPasswordUpdate{}
+	json.Unmarshal(data, &updUsr)
+
+	// validate
+	err = us.validator.Struct(updUsr)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Hash password
+	cryptPass, err := bcrypt.GenerateFromPassword([]byte(updUsr.Password), bcrypt.DefaultCost)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "can't hash password", http.StatusInternalServerError)
+		return
+	}
+	updUsr.Password = string(cryptPass)
+
+	// Save to storage
+	err = us.usrRepo.UpdatePassword(r.Context(), dbUser.ID, updUsr)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	us.sessionManager.DestroyAllSessions(r.Context(), dbUser.ID)
 }

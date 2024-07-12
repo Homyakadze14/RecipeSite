@@ -51,3 +51,9 @@ func (ur *UserRepository) Update(ctx context.Context, user_id int, usr *UserUpda
 		usr.Email, usr.Login, usr.Icon_URL, usr.About, user_id)
 	return err
 }
+
+func (ur *UserRepository) UpdatePassword(ctx context.Context, user_id int, usr *UserPasswordUpdate) error {
+	_, err := ur.db.ExecContext(ctx, "UPDATE users SET password=$1 WHERE id=$2",
+		usr.Password, user_id)
+	return err
+}
