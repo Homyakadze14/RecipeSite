@@ -80,6 +80,17 @@ password - текст(мин 8 симв, макс 50 симв)<br>
 500<br>
 **Отдаёт все рецепты в json**
 
+## Получение рецепта
+**URL:** api/v1/recipe/{id:[0-9]+}<br>
+**METHOD:** GET<br>
+<br>
+**Коды:**<br>
+200,<br>
+401,<br>
+404,<br>
+500<br>
+**Отдаёт рецепт в json**
+
 ## Создание рецепта
 **URL:** api/v1/user/{login}/recipe<br>
 **METHOD:** POST<br>
