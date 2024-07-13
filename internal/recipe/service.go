@@ -37,7 +37,6 @@ func NewService(recipeRepo *RecipeRepository, validator *jsonvalidator.JSONValid
 
 func (rs *RecipeService) HandlFuncs(handler *mux.Router) {
 	recipe := handler.PathPrefix("/recipe").Subrouter()
-	recipe.Use(rs.sessionManager.AuthMiddleware)
 	recipe.HandleFunc("", rs.getAll).Methods(http.MethodGet)
 	recipe.HandleFunc("", rs.getFiltered).Methods(http.MethodPost)
 	recipe.HandleFunc("/{id:[0-9]+}", rs.get).Methods(http.MethodGet)
