@@ -8,12 +8,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/common/middlewares"
-	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/config"
-	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/database"
-	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/jsonvalidator"
-	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/session"
-	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/user"
+	"github.com/Homyakadze14/RecipeSite/internal/common/middlewares"
+	"github.com/Homyakadze14/RecipeSite/internal/config"
+	"github.com/Homyakadze14/RecipeSite/internal/database"
+	"github.com/Homyakadze14/RecipeSite/internal/jsonvalidator"
+	"github.com/Homyakadze14/RecipeSite/internal/recipe"
+	"github.com/Homyakadze14/RecipeSite/internal/session"
+	"github.com/Homyakadze14/RecipeSite/internal/user"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 )
@@ -52,6 +53,11 @@ func main() {
 	ur := user.NewRepository(db)
 	us := user.NewService(ur, vd, sm)
 	us.HandlFuncs(v1)
+
+	// Recipe service
+	rr := recipe.NewRepository(db)
+	rs := recipe.NewService(rr, vd, sm, ur)
+	rs.HandlFuncs(v1)
 
 	// Run server
 	addr := fmt.Sprintf("%s:%v", cfg.Address, cfg.Port)

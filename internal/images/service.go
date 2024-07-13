@@ -5,6 +5,7 @@ import (
 	"io"
 	"mime/multipart"
 	"os"
+	"strings"
 )
 
 func Save(path string, image multipart.File) (string, error) {
@@ -31,5 +32,15 @@ func Save(path string, image multipart.File) (string, error) {
 }
 
 func Remove(path string) error {
+	if strings.Contains(path, ";") {
+		for _, v := range strings.Split(path, ";") {
+			err := os.Remove(v)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
 	return os.Remove(path)
 }

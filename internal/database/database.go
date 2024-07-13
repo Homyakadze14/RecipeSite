@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/config"
+	"github.com/Homyakadze14/RecipeSite/internal/config"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 

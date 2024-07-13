@@ -8,11 +8,12 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
-	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/images"
-	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/jsonvalidator"
-	"github.com/Homyakadze14/RecipeSite/RecipeSite/internal/session"
+	"github.com/Homyakadze14/RecipeSite/internal/images"
+	"github.com/Homyakadze14/RecipeSite/internal/jsonvalidator"
+	"github.com/Homyakadze14/RecipeSite/internal/session"
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -38,7 +39,7 @@ func (us *UserService) HandlFuncs(handler *mux.Router) {
 	auth.HandleFunc("/signup", us.signup).Methods(http.MethodPost)
 	auth.HandleFunc("/signin", us.signin).Methods(http.MethodPost)
 
-	logout := auth.Path("/logout").Subrouter()
+	logout := auth.PathPrefix("/logout").Subrouter()
 	logout.Use(us.sessionManager.AuthMiddleware)
 	logout.HandleFunc("", us.logout).Methods(http.MethodPost)
 
@@ -98,7 +99,7 @@ func (us *UserService) signup(w http.ResponseWriter, r *http.Request) {
 	id, err := us.usrRepo.Create(r.Context(), usr)
 	if err != nil {
 		slog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -218,6 +219,9 @@ func (us *UserService) logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (us *UserService) update(w http.ResponseWriter, r *http.Request) {
+	// Maximum upload of 10 MB files
+	r.ParseMultipartForm(10 << 20)
+
 	// Get user from db
 	dbUser, err := us.usrRepo.GetByLogin(r.Context(), mux.Vars(r)["login"])
 	if err != nil {
@@ -226,6 +230,9 @@ func (us *UserService) update(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "user not found", http.StatusNotFound)
 			return
 		}
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
 	}
 
 	// Get session
@@ -245,10 +252,16 @@ func (us *UserService) update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Icon
-	file, _, err := r.FormFile("icon")
+	file, fileHeader, err := r.FormFile("icon")
 	if err != nil {
 		slog.Error(err.Error())
 		http.Error(w, "can't read file", http.StatusInternalServerError)
+		return
+	}
+	if !strings.Contains(fileHeader.Header.Get("Content-Type"), "image") {
+		ErrFilesType := "file must be image"
+		slog.Error(ErrFilesType)
+		http.Error(w, ErrFilesType, http.StatusBadRequest)
 		return
 	}
 	defer file.Close()
@@ -276,7 +289,7 @@ func (us *UserService) update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// save file to storage
-	uri, err := images.Save(fmt.Sprintf("%v", dbUser.ID), file)
+	uri, err := images.Save(fmt.Sprintf("%v/icon", dbUser.ID), file)
 	if err != nil {
 		slog.Error(err.Error())
 		http.Error(w, "can't save file", http.StatusInternalServerError)
@@ -291,11 +304,10 @@ func (us *UserService) update(w http.ResponseWriter, r *http.Request) {
 		imgerr := images.Remove(uri)
 		if imgerr != nil {
 			slog.Error(imgerr.Error())
-			http.Error(w, imgerr.Error(), http.StatusBadRequest)
 		}
 
 		slog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -303,7 +315,6 @@ func (us *UserService) update(w http.ResponseWriter, r *http.Request) {
 		err = images.Remove(oldIconUrl)
 		if err != nil {
 			slog.Error(err.Error())
-			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
 }
@@ -317,6 +328,9 @@ func (us *UserService) updatePassword(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "user not found", http.StatusNotFound)
 			return
 		}
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
 	}
 
 	// Get session
@@ -368,9 +382,12 @@ func (us *UserService) updatePassword(w http.ResponseWriter, r *http.Request) {
 	err = us.usrRepo.UpdatePassword(r.Context(), dbUser.ID, updUsr)
 	if err != nil {
 		slog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	us.sessionManager.DestroyAllSessions(r.Context(), dbUser.ID)
+	err = us.sessionManager.DestroyAllSessions(r.Context(), dbUser.ID)
+	if err != nil {
+		slog.Error(err.Error())
+	}
 }
