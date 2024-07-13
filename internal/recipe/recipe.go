@@ -20,3 +20,11 @@ type FullRecipe struct {
 	Author        string  `json:"author"`
 	AuthorIconUrl string  `json:"author_icon_url"`
 }
+
+type RecipeFilter struct {
+	Limit      int    `json:"limit"`
+	Offset     int    `json:"offset"`
+	Query      string `json:"query"`
+	OrderField string `json:"order_field"`
+	OrderBy    int    `json:"order_by" validate:"min=-1,max=1"`
+}

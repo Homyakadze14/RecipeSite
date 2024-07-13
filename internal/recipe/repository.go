@@ -3,7 +3,17 @@ package recipe
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
+	"log/slog"
+	"slices"
+	"strings"
 	"time"
+)
+
+const (
+	orderByAsc  = -1
+	orderByDesc = 1
 )
 
 type RecipeRepository struct {
@@ -19,6 +29,62 @@ func NewRepository(db *sql.DB) *RecipeRepository {
 func (repo *RecipeRepository) GetAll(ctx context.Context) ([]Recipe, error) {
 	rows, err := repo.db.QueryContext(ctx, "SELECT * FROM recipes")
 
+	if err != nil {
+		return nil, err
+	}
+
+	recipes := make([]Recipe, 0, 10)
+	for rows.Next() {
+		var recipe Recipe
+		err := rows.Scan(&recipe.ID, &recipe.UserID, &recipe.Title, &recipe.About,
+			&recipe.Complexitiy, &recipe.NeedTime, &recipe.Ingridients,
+			&recipe.PhotosUrls, &recipe.Created_at, &recipe.Updated_at)
+		if err != nil {
+			return nil, err
+		}
+		recipes = append(recipes, recipe)
+	}
+
+	return recipes, nil
+}
+
+func (repo *RecipeRepository) GetFiltered(ctx context.Context, filter *RecipeFilter) ([]Recipe, error) {
+	var request strings.Builder
+	params := make([]interface{}, 0, 5)
+
+	params = append(params, filter.Query)
+	request.WriteString("SELECT * FROM recipes WHERE title LIKE '%'||$1||'%' OR about LIKE '%'||$1||'%' OR ingridients LIKE '%'||$1||'%'")
+
+	allowOrderFields := []string{"", "title", "complexitiy", "updated_at"}
+	if slices.Contains(allowOrderFields, filter.OrderField) {
+		if filter.OrderField == "" {
+			filter.OrderField = "title"
+		}
+		request.WriteString(fmt.Sprintf(" ORDER BY %s", filter.OrderField))
+	} else {
+		return nil, errors.New("bad order field")
+	}
+
+	switch filter.OrderBy {
+	case orderByAsc:
+		request.WriteString(" ASC")
+	case orderByDesc:
+		request.WriteString(" DESC")
+	}
+
+	if filter.Limit != 0 {
+		params = append(params, filter.Limit)
+		request.WriteString(fmt.Sprintf(" LIMIT $%v", len(params)))
+	}
+
+	if filter.Offset != 0 {
+		params = append(params, filter.Offset)
+		request.WriteString(fmt.Sprintf(" OFFSET $%v", len(params)))
+	}
+
+	slog.Info(request.String())
+	fmt.Print(params...)
+	rows, err := repo.db.QueryContext(ctx, request.String(), params...)
 	if err != nil {
 		return nil, err
 	}

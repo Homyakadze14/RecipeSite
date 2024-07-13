@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -38,6 +39,7 @@ func (rs *RecipeService) HandlFuncs(handler *mux.Router) {
 	recipe := handler.PathPrefix("/recipe").Subrouter()
 	recipe.Use(rs.sessionManager.AuthMiddleware)
 	recipe.HandleFunc("", rs.getAll).Methods(http.MethodGet)
+	recipe.HandleFunc("", rs.getFiltered).Methods(http.MethodPost)
 	recipe.HandleFunc("/{id:[0-9]+}", rs.get).Methods(http.MethodGet)
 
 	userRecipe := handler.PathPrefix("/user/{login}/recipe").Subrouter()
@@ -49,6 +51,45 @@ func (rs *RecipeService) HandlFuncs(handler *mux.Router) {
 
 func (rs *RecipeService) getAll(w http.ResponseWriter, r *http.Request) {
 	recipes, err := rs.recipeRepo.GetAll(r.Context())
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string][]Recipe{"recipes": recipes})
+}
+
+func (rs *RecipeService) getFiltered(w http.ResponseWriter, r *http.Request) {
+	// Read request body
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "can't parse body", http.StatusInternalServerError)
+		return
+	}
+
+	// Parse json values to user
+	filter := &RecipeFilter{}
+	err = json.Unmarshal(data, &filter)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "can't parse json", http.StatusInternalServerError)
+		return
+	}
+
+	// validate
+	err = rs.validator.Struct(filter)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Get filtered recipes
+	recipes, err := rs.recipeRepo.GetFiltered(r.Context(), filter)
 	if err != nil {
 		slog.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
