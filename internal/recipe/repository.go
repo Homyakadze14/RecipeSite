@@ -93,6 +93,17 @@ func (repo *RecipeRepository) Create(ctx context.Context, rp *Recipe) error {
 	return nil
 }
 
+func (repo *RecipeRepository) Update(ctx context.Context, rp_id int, rp *Recipe) error {
+	_, err := repo.db.ExecContext(ctx, "UPDATE recipes SET title=$1,about=$2,complexitiy=$3,need_time=$4,ingridients=$5,photos_urls=$6,updated_at=$7 WHERE id=$8",
+		rp.Title, rp.About, rp.Complexitiy, rp.NeedTime, rp.Ingridients, rp.PhotosUrls, time.Now(), rp_id)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (repo *RecipeRepository) Delete(ctx context.Context, rp *Recipe) error {
 	_, err := repo.db.ExecContext(ctx, "DELETE FROM recipes WHERE id=$1", rp.ID)
 	return err

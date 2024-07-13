@@ -43,6 +43,7 @@ func (rs *RecipeService) HandlFuncs(handler *mux.Router) {
 	userRecipe := handler.PathPrefix("/user/{login}/recipe").Subrouter()
 	userRecipe.Use(rs.sessionManager.AuthMiddleware)
 	userRecipe.HandleFunc("", rs.create).Methods(http.MethodPost)
+	userRecipe.HandleFunc("/{id:[0-9]+}", rs.update).Methods(http.MethodPut)
 	userRecipe.HandleFunc("/{id:[0-9]+}", rs.delete).Methods(http.MethodDelete)
 }
 
@@ -88,7 +89,12 @@ func (rs *RecipeService) get(w http.ResponseWriter, r *http.Request) {
 
 func (rs *RecipeService) create(w http.ResponseWriter, r *http.Request) {
 	// Maximum upload of 10 MB files
-	r.ParseMultipartForm(10 << 20)
+	err := r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	// Get user from db
 	dbUser, err := rs.userRepo.GetByLogin(r.Context(), mux.Vars(r)["login"])
@@ -111,7 +117,7 @@ func (rs *RecipeService) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check who update user
+	// Check who create recipe
 	if sess.UserID != dbUser.ID {
 		errNoPermMes := "no permission to create recipe to this user"
 		slog.Error(errNoPermMes)
@@ -196,6 +202,157 @@ func (rs *RecipeService) create(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (rs *RecipeService) update(w http.ResponseWriter, r *http.Request) {
+	// Maximum upload of 10 MB files
+	err := r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Get user from db
+	dbUser, err := rs.userRepo.GetByLogin(r.Context(), mux.Vars(r)["login"])
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			slog.Error(err.Error())
+			http.Error(w, "user not found", http.StatusNotFound)
+			return
+		}
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Get session
+	sess, err := rs.sessionManager.GetSession(r)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "session error", http.StatusInternalServerError)
+		return
+	}
+
+	// Check who update recipe
+	if sess.UserID != dbUser.ID {
+		errNoPermMes := "no permission to update recipe to this user"
+		slog.Error(errNoPermMes)
+		http.Error(w, errNoPermMes, http.StatusBadRequest)
+		return
+	}
+
+	// Parse recipe id
+	id, err := strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "id must be integer", http.StatusBadRequest)
+		return
+	}
+
+	// Get recipe
+	dbRecipe, err := rs.recipeRepo.Get(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			slog.Error(err.Error())
+			http.Error(w, "recipe not found", http.StatusNotFound)
+			return
+		}
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Parse form values to recipe
+	if r.FormValue("complexitiy") != "" {
+		dbRecipe.Complexitiy, err = strconv.Atoi(r.FormValue("complexitiy"))
+		if err != nil {
+			slog.Error(err.Error())
+			http.Error(w, "complexitiy must be integer", http.StatusBadRequest)
+			return
+		}
+	}
+	if r.FormValue("title") != "" {
+		dbRecipe.Title = r.FormValue("title")
+	}
+	if r.FormValue("about") != "" {
+		dbRecipe.About = r.FormValue("about")
+	}
+	if r.FormValue("need_time") != "" {
+		dbRecipe.NeedTime = r.FormValue("need_time")
+	}
+	if r.FormValue("ingridients") != "" {
+		dbRecipe.Ingridients = r.FormValue("ingridients")
+	}
+
+	// validate
+	err = rs.validator.Struct(dbRecipe)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Parse photos and save
+	multipartFormData := r.MultipartForm
+	files := multipartFormData.File["photos"]
+
+	if len(files) == 0 {
+		ErrFiles := "photos must be provided"
+		slog.Error(ErrFiles)
+		http.Error(w, ErrFiles, http.StatusBadRequest)
+		return
+	}
+
+	oldPhotos := dbRecipe.PhotosUrls
+	dbRecipe.PhotosUrls = ""
+	uid := uuid.New().String()
+	for _, v := range files {
+		if !strings.Contains(v.Header.Get("Content-Type"), "image") {
+			ErrFilesType := "files must be images"
+			slog.Error(ErrFilesType)
+			http.Error(w, ErrFilesType, http.StatusBadRequest)
+			return
+		}
+
+		uploadedFile, err := v.Open()
+		if err != nil {
+			slog.Error(err.Error())
+			http.Error(w, "can't read file", http.StatusInternalServerError)
+			return
+		}
+
+		uri, err := images.Save(fmt.Sprintf("%v/recipes/%s", dbUser.ID, uid), uploadedFile)
+		if err != nil {
+			slog.Error(err.Error())
+			http.Error(w, "can't save files", http.StatusInternalServerError)
+			return
+		}
+		dbRecipe.PhotosUrls += uri + ";"
+
+		uploadedFile.Close()
+	}
+
+	// Update recipe in storage
+	err = rs.recipeRepo.Update(r.Context(), id, dbRecipe)
+	if err != nil {
+		errImage := images.Remove(dbRecipe.PhotosUrls)
+		if errImage != nil {
+			slog.Error(errImage.Error())
+		}
+
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Delete old photos
+	if oldPhotos != "" {
+		err = images.Remove(oldPhotos)
+		if err != nil {
+			slog.Error(err.Error())
+		}
+	}
+}
+
 func (rs *RecipeService) delete(w http.ResponseWriter, r *http.Request) {
 	// Get user from db
 	dbUser, err := rs.userRepo.GetByLogin(r.Context(), mux.Vars(r)["login"])
@@ -218,7 +375,7 @@ func (rs *RecipeService) delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check who update user
+	// Check who delete recipe
 	if sess.UserID != dbUser.ID {
 		errNoPermMes := "no permission to delete this recipe"
 		slog.Error(errNoPermMes)

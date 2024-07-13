@@ -220,7 +220,12 @@ func (us *UserService) logout(w http.ResponseWriter, r *http.Request) {
 
 func (us *UserService) update(w http.ResponseWriter, r *http.Request) {
 	// Maximum upload of 10 MB files
-	r.ParseMultipartForm(10 << 20)
+	err := r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	// Get user from db
 	dbUser, err := us.usrRepo.GetByLogin(r.Context(), mux.Vars(r)["login"])
