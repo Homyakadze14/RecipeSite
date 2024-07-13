@@ -38,7 +38,11 @@ func (rs *RecipeService) HandlFuncs(handler *mux.Router) {
 	recipe := handler.PathPrefix("/recipe").Subrouter()
 	recipe.Use(rs.sessionManager.AuthMiddleware)
 	recipe.HandleFunc("", rs.getAll).Methods(http.MethodGet)
-	recipe.HandleFunc("/{login}", rs.create).Methods(http.MethodPost)
+
+	userRecipe := handler.PathPrefix("/user/{login}/recipe").Subrouter()
+	userRecipe.Use(rs.sessionManager.AuthMiddleware)
+	userRecipe.HandleFunc("", rs.create).Methods(http.MethodPost)
+	userRecipe.HandleFunc("/{id:[0-9]+}", rs.delete).Methods(http.MethodDelete)
 }
 
 func (rs *RecipeService) getAll(w http.ResponseWriter, r *http.Request) {
@@ -81,7 +85,7 @@ func (rs *RecipeService) create(w http.ResponseWriter, r *http.Request) {
 
 	// Check who update user
 	if sess.UserID != dbUser.ID {
-		errNoPermMes := "no permission to update this user"
+		errNoPermMes := "no permission to create recipe to this user"
 		slog.Error(errNoPermMes)
 		http.Error(w, errNoPermMes, http.StatusBadRequest)
 		return
@@ -158,6 +162,66 @@ func (rs *RecipeService) create(w http.ResponseWriter, r *http.Request) {
 			slog.Error(errImage.Error())
 		}
 
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (rs *RecipeService) delete(w http.ResponseWriter, r *http.Request) {
+	// Get user from db
+	dbUser, err := rs.userRepo.GetByLogin(r.Context(), mux.Vars(r)["login"])
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			slog.Error(err.Error())
+			http.Error(w, "user not found", http.StatusNotFound)
+			return
+		}
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Get session
+	sess, err := rs.sessionManager.GetSession(r)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "session error", http.StatusInternalServerError)
+		return
+	}
+
+	// Check who update user
+	if sess.UserID != dbUser.ID {
+		errNoPermMes := "no permission to delete this recipe"
+		slog.Error(errNoPermMes)
+		http.Error(w, errNoPermMes, http.StatusBadRequest)
+		return
+	}
+
+	// Parse recipe id
+	id, err := strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "id must be integer", http.StatusBadRequest)
+		return
+	}
+
+	// Get recipe
+	recipe, err := rs.recipeRepo.Get(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			slog.Error(err.Error())
+			http.Error(w, "recipe not found", http.StatusNotFound)
+			return
+		}
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Delete recipe
+	err = rs.recipeRepo.Delete(r.Context(), recipe)
+	if err != nil {
 		slog.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
