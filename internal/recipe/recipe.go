@@ -1,6 +1,10 @@
 package recipe
 
-import "time"
+import (
+	"time"
+
+	"github.com/Homyakadze14/RecipeSite/internal/user"
+)
 
 type Recipe struct {
 	ID          int       `json:"id"`
@@ -16,9 +20,10 @@ type Recipe struct {
 }
 
 type FullRecipe struct {
-	Recipe        *Recipe `json:"recipe"`
-	Author        string  `json:"author"`
-	AuthorIconUrl string  `json:"author_icon_url"`
+	Recipe     *Recipe      `json:"recipe"`
+	Author     *user.Author `json:"author"`
+	LikesCount int          `json:"likes_count"`
+	IsLiked    bool         `json:"is_liked"`
 }
 
 type RecipeFilter struct {

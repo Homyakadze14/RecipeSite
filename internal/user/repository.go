@@ -36,6 +36,16 @@ func (ur *UserRepository) GetByLogin(ctx context.Context, login string) (*User, 
 	return usr, nil
 }
 
+func (ur *UserRepository) GetAuthor(ctx context.Context, id int) (*Author, error) {
+	row := ur.db.QueryRowContext(ctx, "SELECT login, icon_url FROM users WHERE id=$1", id)
+	usr := &Author{}
+	err := row.Scan(&usr.Login, &usr.Icon_URL)
+	if err != nil {
+		return nil, err
+	}
+	return usr, nil
+}
+
 func (ur *UserRepository) GetByEmail(ctx context.Context, email string) (*User, error) {
 	row := ur.db.QueryRowContext(ctx, "SELECT * FROM users WHERE email=$1", email)
 	usr := &User{}

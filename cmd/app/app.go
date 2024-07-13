@@ -12,6 +12,7 @@ import (
 	"github.com/Homyakadze14/RecipeSite/internal/config"
 	"github.com/Homyakadze14/RecipeSite/internal/database"
 	"github.com/Homyakadze14/RecipeSite/internal/jsonvalidator"
+	"github.com/Homyakadze14/RecipeSite/internal/like"
 	"github.com/Homyakadze14/RecipeSite/internal/recipe"
 	"github.com/Homyakadze14/RecipeSite/internal/session"
 	"github.com/Homyakadze14/RecipeSite/internal/user"
@@ -58,6 +59,11 @@ func main() {
 	rr := recipe.NewRepository(db)
 	rs := recipe.NewService(rr, vd, sm, ur)
 	rs.HandlFuncs(v1)
+
+	// Like service
+	lr := like.NewRepository(db)
+	ls := like.NewService(lr, sm, rr)
+	ls.HandlFuncs(v1)
 
 	// Run server
 	addr := fmt.Sprintf("%s:%v", cfg.Address, cfg.Port)

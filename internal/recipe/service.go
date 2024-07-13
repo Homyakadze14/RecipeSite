@@ -109,8 +109,10 @@ func (rs *RecipeService) get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fullRecipe := &FullRecipe{}
+
 	// Get recipe
-	recipe, err := rs.recipeRepo.GetFullRecipe(r.Context(), id)
+	recipe, err := rs.recipeRepo.Get(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			slog.Error(err.Error())
@@ -121,10 +123,25 @@ func (rs *RecipeService) get(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	fullRecipe.Recipe = recipe
+
+	// Get Author
+	author, err := rs.userRepo.GetAuthor(r.Context(), recipe.UserID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			slog.Error(err.Error())
+			http.Error(w, "author not found", http.StatusNotFound)
+			return
+		}
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fullRecipe.Author = author
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]*FullRecipe{"info": recipe})
+	json.NewEncoder(w).Encode(map[string]*FullRecipe{"info": fullRecipe})
 }
 
 func (rs *RecipeService) create(w http.ResponseWriter, r *http.Request) {

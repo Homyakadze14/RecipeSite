@@ -119,35 +119,6 @@ func (repo *RecipeRepository) Get(ctx context.Context, id int) (*Recipe, error) 
 	return recipe, nil
 }
 
-func (repo *RecipeRepository) GetFullRecipe(ctx context.Context, id int) (*FullRecipe, error) {
-	tx, err := repo.db.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-
-	row := tx.QueryRowContext(ctx, "SELECT * FROM recipes WHERE id=$1", id)
-	recipe := &Recipe{}
-	err = row.Scan(&recipe.ID, &recipe.UserID, &recipe.Title, &recipe.About,
-		&recipe.Complexitiy, &recipe.NeedTime, &recipe.Ingridients,
-		&recipe.PhotosUrls, &recipe.Created_at, &recipe.Updated_at)
-	if err != nil {
-		return nil, err
-	}
-
-	fullRecipe := &FullRecipe{}
-	row = tx.QueryRowContext(ctx, "SELECT login, icon_url FROM users WHERE id=$1", recipe.UserID)
-	err = row.Scan(&fullRecipe.Author, &fullRecipe.AuthorIconUrl)
-	if err != nil {
-		return nil, err
-	}
-	fullRecipe.Recipe = recipe
-
-	tx.Commit()
-
-	return fullRecipe, nil
-}
-
 func (repo *RecipeRepository) Create(ctx context.Context, rp *Recipe) error {
 	_, err := repo.db.ExecContext(ctx, "INSERT INTO recipes(user_id,title,about,complexitiy,need_time,ingridients,photos_urls,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)",
 		rp.UserID, rp.Title, rp.About, rp.Complexitiy, rp.NeedTime, rp.Ingridients, rp.PhotosUrls, time.Now(), time.Now())
