@@ -148,3 +148,21 @@ photos - изображения<br>
 401,<br>
 404,<br>
 500<br>
+
+# Лайкнуть рецепт
+**URL:** api/v1/recipe/{id:[0-9]+}/like<br>
+**METHOD:** POST<br>
+<br>
+**Коды:**<br>
+200,<br>
+401,<br>
+500<br>
+
+# Убрать лайк
+**URL:** api/v1/recipe/{id:[0-9]+}/unlike<br>
+**METHOD:** POST<br>
+<br>
+**Коды:**<br>
+200,<br>
+401,<br>
+500<br>
