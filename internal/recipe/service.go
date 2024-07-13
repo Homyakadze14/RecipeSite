@@ -38,6 +38,7 @@ func (rs *RecipeService) HandlFuncs(handler *mux.Router) {
 	recipe := handler.PathPrefix("/recipe").Subrouter()
 	recipe.Use(rs.sessionManager.AuthMiddleware)
 	recipe.HandleFunc("", rs.getAll).Methods(http.MethodGet)
+	recipe.HandleFunc("/{id:[0-9]+}", rs.get).Methods(http.MethodGet)
 
 	userRecipe := handler.PathPrefix("/user/{login}/recipe").Subrouter()
 	userRecipe.Use(rs.sessionManager.AuthMiddleware)
@@ -56,6 +57,33 @@ func (rs *RecipeService) getAll(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string][]Recipe{"recipes": recipes})
+}
+
+func (rs *RecipeService) get(w http.ResponseWriter, r *http.Request) {
+	// Parse recipe id
+	id, err := strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "id must be integer", http.StatusBadRequest)
+		return
+	}
+
+	// Get recipe
+	recipe, err := rs.recipeRepo.GetFullRecipe(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			slog.Error(err.Error())
+			http.Error(w, "recipe not found", http.StatusNotFound)
+			return
+		}
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]*FullRecipe{"info": recipe})
 }
 
 func (rs *RecipeService) create(w http.ResponseWriter, r *http.Request) {
@@ -100,7 +128,7 @@ func (rs *RecipeService) create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	recipe := &Recipe{
-		User_ID:     dbUser.ID,
+		UserID:      dbUser.ID,
 		Title:       r.FormValue("title"),
 		About:       r.FormValue("about"),
 		Complexitiy: complexitiy,
@@ -149,7 +177,7 @@ func (rs *RecipeService) create(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "can't save files", http.StatusInternalServerError)
 			return
 		}
-		recipe.Photos_URLS += uri + ";"
+		recipe.PhotosUrls += uri + ";"
 
 		uploadedFile.Close()
 	}
@@ -157,7 +185,7 @@ func (rs *RecipeService) create(w http.ResponseWriter, r *http.Request) {
 	// Save to storage
 	err = rs.recipeRepo.Create(r.Context(), recipe)
 	if err != nil {
-		errImage := images.Remove(recipe.Photos_URLS)
+		errImage := images.Remove(recipe.PhotosUrls)
 		if errImage != nil {
 			slog.Error(errImage.Error())
 		}
