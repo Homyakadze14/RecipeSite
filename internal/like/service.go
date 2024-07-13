@@ -1,28 +1,23 @@
 package like
 
 import (
-	"database/sql"
-	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
 
-	"github.com/Homyakadze14/RecipeSite/internal/recipe"
 	"github.com/Homyakadze14/RecipeSite/internal/session"
 	"github.com/gorilla/mux"
 )
 
 type LikeService struct {
 	likeRepo       *LikeRepository
-	recipeRepo     *recipe.RecipeRepository
 	sessionManager *session.SessionManager
 }
 
-func NewService(lr *LikeRepository, sm *session.SessionManager, rr *recipe.RecipeRepository) *LikeService {
+func NewService(lr *LikeRepository, sm *session.SessionManager) *LikeService {
 	return &LikeService{
 		likeRepo:       lr,
 		sessionManager: sm,
-		recipeRepo:     rr,
 	}
 }
 
@@ -50,23 +45,10 @@ func (ls *LikeService) like(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get recipe
-	recipe, err := ls.recipeRepo.Get(r.Context(), id)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			slog.Error(err.Error())
-			http.Error(w, "recipe not found", http.StatusNotFound)
-			return
-		}
-		slog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	// Form like
 	like := &Like{
 		UserID:   sess.UserID,
-		RecipeID: recipe.ID,
+		RecipeID: id,
 	}
 
 	// Check
@@ -110,23 +92,10 @@ func (ls *LikeService) unlike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get recipe
-	recipe, err := ls.recipeRepo.Get(r.Context(), id)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			slog.Error(err.Error())
-			http.Error(w, "recipe not found", http.StatusNotFound)
-			return
-		}
-		slog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	// Form like
 	like := &Like{
 		UserID:   sess.UserID,
-		RecipeID: recipe.ID,
+		RecipeID: id,
 	}
 
 	// Check

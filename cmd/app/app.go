@@ -52,18 +52,18 @@ func main() {
 
 	// User service
 	ur := user.NewRepository(db)
-	us := user.NewService(ur, vd, sm)
+	us := user.NewService(ur, sm, vd)
 	us.HandlFuncs(v1)
-
-	// Recipe service
-	rr := recipe.NewRepository(db)
-	rs := recipe.NewService(rr, vd, sm, ur)
-	rs.HandlFuncs(v1)
 
 	// Like service
 	lr := like.NewRepository(db)
-	ls := like.NewService(lr, sm, rr)
+	ls := like.NewService(lr, sm)
 	ls.HandlFuncs(v1)
+
+	// Recipe service
+	rr := recipe.NewRepository(db)
+	rs := recipe.NewService(rr, sm, ur, lr, vd)
+	rs.HandlFuncs(v1)
 
 	// Run server
 	addr := fmt.Sprintf("%s:%v", cfg.Address, cfg.Port)

@@ -13,6 +13,7 @@ import (
 
 	"github.com/Homyakadze14/RecipeSite/internal/images"
 	"github.com/Homyakadze14/RecipeSite/internal/jsonvalidator"
+	"github.com/Homyakadze14/RecipeSite/internal/like"
 	"github.com/Homyakadze14/RecipeSite/internal/session"
 	"github.com/Homyakadze14/RecipeSite/internal/user"
 	"github.com/google/uuid"
@@ -22,16 +23,19 @@ import (
 type RecipeService struct {
 	recipeRepo     *RecipeRepository
 	userRepo       *user.UserRepository
-	validator      *jsonvalidator.JSONValidator
+	likeRepo       *like.LikeRepository
 	sessionManager *session.SessionManager
+	validator      *jsonvalidator.JSONValidator
 }
 
-func NewService(recipeRepo *RecipeRepository, validator *jsonvalidator.JSONValidator, sm *session.SessionManager, ur *user.UserRepository) *RecipeService {
+func NewService(rr *RecipeRepository, sm *session.SessionManager,
+	ur *user.UserRepository, lr *like.LikeRepository, v *jsonvalidator.JSONValidator) *RecipeService {
 	return &RecipeService{
-		recipeRepo:     recipeRepo,
-		validator:      validator,
+		recipeRepo:     rr,
+		validator:      v,
 		userRepo:       ur,
 		sessionManager: sm,
+		likeRepo:       lr,
 	}
 }
 
@@ -138,6 +142,30 @@ func (rs *RecipeService) get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fullRecipe.Author = author
+
+	// Get likes count
+	fullRecipe.LikesCount, err = rs.likeRepo.LikesCount(r.Context(), recipe.ID)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Get session
+	sess, err := rs.sessionManager.GetSession(r)
+	// Check auth user
+	if err == nil {
+		like := &like.Like{
+			UserID:   sess.UserID,
+			RecipeID: recipe.ID,
+		}
+		fullRecipe.IsLiked, err = rs.likeRepo.IsAlreadyLike(r.Context(), like)
+		if err != nil {
+			slog.Error(err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

@@ -22,14 +22,14 @@ const defaultIconURL = ""
 
 type UserService struct {
 	usrRepo        *UserRepository
-	validator      *jsonvalidator.JSONValidator
 	sessionManager *session.SessionManager
+	validator      *jsonvalidator.JSONValidator
 }
 
-func NewService(usrRepo *UserRepository, validator *jsonvalidator.JSONValidator, sm *session.SessionManager) *UserService {
+func NewService(ur *UserRepository, sm *session.SessionManager, v *jsonvalidator.JSONValidator) *UserService {
 	return &UserService{
-		usrRepo:        usrRepo,
-		validator:      validator,
+		usrRepo:        ur,
+		validator:      v,
 		sessionManager: sm,
 	}
 }
