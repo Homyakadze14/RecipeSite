@@ -15,6 +15,7 @@ services:
     restart: always
     environment:
       - PROD=True
+      - DATABASE_HOST=database
     env_file: configs/.env 
     depends_on:
       - database
