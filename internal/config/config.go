@@ -1,32 +1,54 @@
 package config
 
 import (
-	"encoding/json"
+	"errors"
 	"os"
+	"strconv"
+
+	"github.com/joho/godotenv"
 )
 
-const DefaultIconURL = "https://s3.timeweb.cloud/9bca4c82-d59b4da0-b233-47cd-bd6a-d8ab89558c39/defaul_icon.png"
+var DefaultIconURL = ""
 
 type Config struct {
-	Address              string `json:"address"`
-	Port                 int    `json:"port"`
-	DB_Host              string `json:"db_host"`
-	DB_Name              string `json:"db_name"`
-	DB_User              string `json:"db_user"`
-	DB_Password          string `json:"db_password"`
-	S3_ACCESS_KEY        string `json:"s3_access_key"`
-	S3_SECRET_ACCESS_KEY string `json:"s3_secret_access_key"`
-	S3_BUCKET_NAME       string `json:"s3_bucket_name"`
-	S3_ENDPOINT          string `json:"s3_endpoint"`
+	Local                bool
+	Address              string
+	Port                 int
+	DB_Host              string
+	DB_Name              string
+	DB_User              string
+	DB_Password          string
+	S3_ACCESS_KEY        string
+	S3_SECRET_ACCESS_KEY string
+	S3_BUCKET_NAME       string
+	S3_ENDPOINT          string
 }
 
 func Parse() (*Config, error) {
-	file, err := os.ReadFile("./configs/config.json")
-	if err != nil {
-		return nil, err
+	if os.Getenv("PROD") == "" {
+		if err := godotenv.Load("./configs/.env"); err != nil {
+			return nil, errors.New("no .env file found")
+		}
 	}
 
-	var cfg Config
-	json.Unmarshal(file, &cfg)
-	return &cfg, err
+	DefaultIconURL = os.Getenv("DEFAULT_ICON_URL")
+	port, err := strconv.Atoi(os.Getenv("PORT"))
+	if err != nil {
+		return nil, errors.New("port must be integer")
+	}
+
+	cfg := &Config{
+		Address:              os.Getenv("ADDRESS"),
+		Port:                 port,
+		DB_Host:              os.Getenv("DATABASE_HOST"),
+		DB_Name:              os.Getenv("POSTGRES_DB"),
+		DB_User:              os.Getenv("POSTGRES_USER"),
+		DB_Password:          os.Getenv("POSTGRES_PASSWORD"),
+		S3_ACCESS_KEY:        os.Getenv("S3_ACCESS_KEY"),
+		S3_SECRET_ACCESS_KEY: os.Getenv("S3_SECRET_ACCESS_KEY"),
+		S3_BUCKET_NAME:       os.Getenv("S3_BUCKET_NAME"),
+		S3_ENDPOINT:          os.Getenv("S3_ENDPOINT"),
+	}
+
+	return cfg, nil
 }
