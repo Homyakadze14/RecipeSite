@@ -3,6 +3,7 @@ module github.com/Homyakadze14/RecipeSite
 go 1.22.1
 
 require (
+	github.com/aws/aws-sdk-go v1.54.19
 	github.com/go-playground/validator/v10 v10.22.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
@@ -17,6 +18,7 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
 	github.com/jackc/puddle/v2 v2.2.1 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect

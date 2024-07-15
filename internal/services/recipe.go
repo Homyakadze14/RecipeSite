@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -16,7 +15,6 @@ import (
 	"github.com/Homyakadze14/RecipeSite/internal/models"
 	"github.com/Homyakadze14/RecipeSite/internal/repos"
 	"github.com/Homyakadze14/RecipeSite/internal/session"
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -26,11 +24,12 @@ type RecipeService struct {
 	likeRepo       *repos.LikeRepository
 	sessionManager *session.SessionManager
 	commentRepo    *repos.CommentRepository
+	s3             *images.S3Storage
 	validator      *jsonvalidator.JSONValidator
 }
 
 func NewRecipeService(rr *repos.RecipeRepository, sm *session.SessionManager,
-	ur *repos.UserRepository, lr *repos.LikeRepository, cr *repos.CommentRepository, v *jsonvalidator.JSONValidator) *RecipeService {
+	ur *repos.UserRepository, lr *repos.LikeRepository, cr *repos.CommentRepository, s3 *images.S3Storage, v *jsonvalidator.JSONValidator) *RecipeService {
 	return &RecipeService{
 		recipeRepo:     rr,
 		validator:      v,
@@ -38,6 +37,7 @@ func NewRecipeService(rr *repos.RecipeRepository, sm *session.SessionManager,
 		sessionManager: sm,
 		likeRepo:       lr,
 		commentRepo:    cr,
+		s3:             s3,
 	}
 }
 
@@ -256,7 +256,6 @@ func (rs *RecipeService) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uid := uuid.New().String()
 	for _, v := range files {
 		if !strings.Contains(v.Header.Get("Content-Type"), "image") {
 			ErrFilesType := "files must be images"
@@ -272,7 +271,7 @@ func (rs *RecipeService) create(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		uri, err := images.Save(fmt.Sprintf("%v/recipes/%s", dbUser.ID, uid), uploadedFile)
+		uri, err := rs.s3.Save(uploadedFile, "image/jpeg")
 		if err != nil {
 			slog.Error(err.Error())
 			http.Error(w, "can't save files", http.StatusInternalServerError)
@@ -286,7 +285,7 @@ func (rs *RecipeService) create(w http.ResponseWriter, r *http.Request) {
 	// Save to storage
 	err = rs.recipeRepo.Create(r.Context(), recipe)
 	if err != nil {
-		errImage := images.Remove(recipe.PhotosUrls)
+		errImage := rs.s3.Remove(recipe.PhotosUrls)
 		if errImage != nil {
 			slog.Error(errImage.Error())
 		}
@@ -399,7 +398,6 @@ func (rs *RecipeService) update(w http.ResponseWriter, r *http.Request) {
 
 	oldPhotos := dbRecipe.PhotosUrls
 	dbRecipe.PhotosUrls = ""
-	uid := uuid.New().String()
 	for _, v := range files {
 		if !strings.Contains(v.Header.Get("Content-Type"), "image") {
 			ErrFilesType := "files must be images"
@@ -415,7 +413,7 @@ func (rs *RecipeService) update(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		uri, err := images.Save(fmt.Sprintf("%v/recipes/%s", dbUser.ID, uid), uploadedFile)
+		uri, err := rs.s3.Save(uploadedFile, "image/jpeg")
 		if err != nil {
 			slog.Error(err.Error())
 			http.Error(w, "can't save files", http.StatusInternalServerError)
@@ -429,7 +427,7 @@ func (rs *RecipeService) update(w http.ResponseWriter, r *http.Request) {
 	// Update recipe in storage
 	err = rs.recipeRepo.Update(r.Context(), id, dbRecipe)
 	if err != nil {
-		errImage := images.Remove(dbRecipe.PhotosUrls)
+		errImage := rs.s3.Remove(dbRecipe.PhotosUrls)
 		if errImage != nil {
 			slog.Error(errImage.Error())
 		}
@@ -441,7 +439,7 @@ func (rs *RecipeService) update(w http.ResponseWriter, r *http.Request) {
 
 	// Delete old photos
 	if oldPhotos != "" {
-		err = images.Remove(oldPhotos)
+		err = rs.s3.Remove(oldPhotos)
 		if err != nil {
 			slog.Error(err.Error())
 		}

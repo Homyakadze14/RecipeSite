@@ -11,6 +11,7 @@ import (
 	"github.com/Homyakadze14/RecipeSite/internal/common/middlewares"
 	"github.com/Homyakadze14/RecipeSite/internal/config"
 	"github.com/Homyakadze14/RecipeSite/internal/database"
+	"github.com/Homyakadze14/RecipeSite/internal/images"
 	"github.com/Homyakadze14/RecipeSite/internal/jsonvalidator"
 	"github.com/Homyakadze14/RecipeSite/internal/repos"
 	"github.com/Homyakadze14/RecipeSite/internal/services"
@@ -37,6 +38,13 @@ func main() {
 		log.Fatalf("Databse failed: %s", err)
 	}
 
+	// Connect to s3
+	s3, err := images.NewS3Storage(cfg)
+	log.Printf("Connect to s3")
+	if err != nil {
+		log.Fatalf("Databse failed: %s", err)
+	}
+
 	// Main handler
 	handler := mux.NewRouter()
 
@@ -56,7 +64,7 @@ func main() {
 	rr := repos.NewRecipeRepository(db)
 
 	// User service
-	us := services.NewService(ur, sm, lr, rr, vd)
+	us := services.NewService(ur, sm, lr, rr, s3, vd)
 	us.HandlFuncs(v1)
 
 	// Like service
@@ -68,7 +76,7 @@ func main() {
 	cs.HandlFuncs(v1)
 
 	// Recipe service
-	rs := services.NewRecipeService(rr, sm, ur, lr, cr, vd)
+	rs := services.NewRecipeService(rr, sm, ur, lr, cr, s3, vd)
 	rs.HandlFuncs(v1)
 
 	// Run server

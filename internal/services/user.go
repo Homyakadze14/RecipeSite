@@ -4,13 +4,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/Homyakadze14/RecipeSite/internal/config"
 	"github.com/Homyakadze14/RecipeSite/internal/images"
 	"github.com/Homyakadze14/RecipeSite/internal/jsonvalidator"
 	"github.com/Homyakadze14/RecipeSite/internal/models"
@@ -20,23 +20,23 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const defaultIconURL = ""
-
 type UserService struct {
 	usrRepo        *repos.UserRepository
 	likeRepo       *repos.LikeRepository
 	recipeRepo     *repos.RecipeRepository
 	sessionManager *session.SessionManager
+	s3             *images.S3Storage
 	validator      *jsonvalidator.JSONValidator
 }
 
-func NewService(ur *repos.UserRepository, sm *session.SessionManager, lr *repos.LikeRepository, rr *repos.RecipeRepository, v *jsonvalidator.JSONValidator) *UserService {
+func NewService(ur *repos.UserRepository, sm *session.SessionManager, lr *repos.LikeRepository, rr *repos.RecipeRepository, s3 *images.S3Storage, v *jsonvalidator.JSONValidator) *UserService {
 	return &UserService{
 		usrRepo:        ur,
 		validator:      v,
 		sessionManager: sm,
 		likeRepo:       lr,
 		recipeRepo:     rr,
+		s3:             s3,
 	}
 }
 
@@ -93,7 +93,7 @@ func (us *UserService) signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// set default icon
-	usr.Icon_URL = defaultIconURL
+	usr.Icon_URL = config.DefaultIconURL
 
 	// Hash password
 	cryptPass, err := bcrypt.GenerateFromPassword([]byte(usr.Password), bcrypt.DefaultCost)
@@ -303,7 +303,7 @@ func (us *UserService) update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// save file to storage
-	uri, err := images.Save(fmt.Sprintf("%v/icon", dbUser.ID), file)
+	uri, err := us.s3.Save(file, "image/jpeg")
 	if err != nil {
 		slog.Error(err.Error())
 		http.Error(w, "can't save file", http.StatusInternalServerError)
@@ -315,7 +315,7 @@ func (us *UserService) update(w http.ResponseWriter, r *http.Request) {
 	// Save to storage
 	err = us.usrRepo.Update(r.Context(), dbUser.ID, usr)
 	if err != nil {
-		imgerr := images.Remove(uri)
+		imgerr := us.s3.Remove(uri)
 		if imgerr != nil {
 			slog.Error(imgerr.Error())
 		}
@@ -326,7 +326,7 @@ func (us *UserService) update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if oldIconUrl != "" {
-		err = images.Remove(oldIconUrl)
+		err = us.s3.Remove(oldIconUrl)
 		if err != nil {
 			slog.Error(err.Error())
 		}
