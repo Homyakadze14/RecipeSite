@@ -1,4 +1,4 @@
-package user
+package models
 
 import (
 	"time"
@@ -12,6 +12,16 @@ type User struct {
 	Icon_URL   string    `json:"icon_url"`
 	About      string    `json:"about" validate:"max=1500"`
 	Created_at time.Time `json:"created_at"`
+}
+
+type UserInfo struct {
+	ID            int       `json:"id"`
+	Login         string    `json:"login"`
+	Icon_URL      string    `json:"icon_url"`
+	About         string    `json:"about"`
+	Created_at    time.Time `json:"created_at"`
+	Recipies      []Recipe  `json:"recipies"`
+	LikedRecipies []Recipe  `json:"liked_recipies"`
 }
 
 type Author struct {

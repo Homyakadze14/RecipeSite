@@ -1,4 +1,4 @@
-package recipe
+package services
 
 import (
 	"database/sql"
@@ -11,27 +11,26 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Homyakadze14/RecipeSite/internal/comment"
 	"github.com/Homyakadze14/RecipeSite/internal/images"
 	"github.com/Homyakadze14/RecipeSite/internal/jsonvalidator"
-	"github.com/Homyakadze14/RecipeSite/internal/like"
+	"github.com/Homyakadze14/RecipeSite/internal/models"
+	"github.com/Homyakadze14/RecipeSite/internal/repos"
 	"github.com/Homyakadze14/RecipeSite/internal/session"
-	"github.com/Homyakadze14/RecipeSite/internal/user"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
 type RecipeService struct {
-	recipeRepo     *RecipeRepository
-	userRepo       *user.UserRepository
-	likeRepo       *like.LikeRepository
+	recipeRepo     *repos.RecipeRepository
+	userRepo       *repos.UserRepository
+	likeRepo       *repos.LikeRepository
 	sessionManager *session.SessionManager
-	commentRepo    *comment.Repository
+	commentRepo    *repos.CommentRepository
 	validator      *jsonvalidator.JSONValidator
 }
 
-func NewService(rr *RecipeRepository, sm *session.SessionManager,
-	ur *user.UserRepository, lr *like.LikeRepository, cr *comment.Repository, v *jsonvalidator.JSONValidator) *RecipeService {
+func NewRecipeService(rr *repos.RecipeRepository, sm *session.SessionManager,
+	ur *repos.UserRepository, lr *repos.LikeRepository, cr *repos.CommentRepository, v *jsonvalidator.JSONValidator) *RecipeService {
 	return &RecipeService{
 		recipeRepo:     rr,
 		validator:      v,
@@ -65,7 +64,7 @@ func (rs *RecipeService) getAll(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string][]Recipe{"recipes": recipes})
+	json.NewEncoder(w).Encode(map[string][]models.Recipe{"recipes": recipes})
 }
 
 func (rs *RecipeService) getFiltered(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +77,7 @@ func (rs *RecipeService) getFiltered(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse json values to user
-	filter := &RecipeFilter{}
+	filter := &models.RecipeFilter{}
 	err = json.Unmarshal(data, &filter)
 	if err != nil {
 		slog.Error(err.Error())
@@ -104,7 +103,7 @@ func (rs *RecipeService) getFiltered(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string][]Recipe{"recipes": recipes})
+	json.NewEncoder(w).Encode(map[string][]models.Recipe{"recipes": recipes})
 }
 
 func (rs *RecipeService) get(w http.ResponseWriter, r *http.Request) {
@@ -116,7 +115,7 @@ func (rs *RecipeService) get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fullRecipe := &FullRecipe{}
+	fullRecipe := &models.FullRecipe{}
 
 	// Get recipe
 	recipe, err := rs.recipeRepo.Get(r.Context(), id)
@@ -166,7 +165,7 @@ func (rs *RecipeService) get(w http.ResponseWriter, r *http.Request) {
 	sess, err := rs.sessionManager.GetSession(r)
 	// Check auth user
 	if err == nil {
-		like := &like.Like{
+		like := &models.Like{
 			UserID:   sess.UserID,
 			RecipeID: recipe.ID,
 		}
@@ -180,7 +179,7 @@ func (rs *RecipeService) get(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]*FullRecipe{"info": fullRecipe})
+	json.NewEncoder(w).Encode(map[string]*models.FullRecipe{"info": fullRecipe})
 }
 
 func (rs *RecipeService) create(w http.ResponseWriter, r *http.Request) {
@@ -229,7 +228,7 @@ func (rs *RecipeService) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	recipe := &Recipe{
+	recipe := &models.Recipe{
 		UserID:      dbUser.ID,
 		Title:       r.FormValue("title"),
 		About:       r.FormValue("about"),

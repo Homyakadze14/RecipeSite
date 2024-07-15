@@ -1,4 +1,4 @@
-package comment
+package services
 
 import (
 	"encoding/json"
@@ -8,17 +8,19 @@ import (
 	"strconv"
 
 	"github.com/Homyakadze14/RecipeSite/internal/jsonvalidator"
+	"github.com/Homyakadze14/RecipeSite/internal/models"
+	"github.com/Homyakadze14/RecipeSite/internal/repos"
 	"github.com/Homyakadze14/RecipeSite/internal/session"
 	"github.com/gorilla/mux"
 )
 
 type Service struct {
-	cr *Repository
+	cr *repos.CommentRepository
 	sm *session.SessionManager
 	vd *jsonvalidator.JSONValidator
 }
 
-func NewService(cr *Repository, sm *session.SessionManager, vd *jsonvalidator.JSONValidator) *Service {
+func NewCommentService(cr *repos.CommentRepository, sm *session.SessionManager, vd *jsonvalidator.JSONValidator) *Service {
 	return &Service{
 		cr: cr,
 		sm: sm,
@@ -43,7 +45,7 @@ func (cs *Service) addComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	comment := &Comment{}
+	comment := &models.Comment{}
 	err = json.Unmarshal(data, &comment)
 	if err != nil {
 		slog.Error(err.Error())
@@ -95,7 +97,7 @@ func (cs *Service) updateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	comment := &CommentUpdate{}
+	comment := &models.CommentUpdate{}
 	err = json.Unmarshal(data, &comment)
 	if err != nil {
 		slog.Error(err.Error())
@@ -129,7 +131,7 @@ func (cs *Service) deleteComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	comment := &CommentDelete{}
+	comment := &models.CommentDelete{}
 	err = json.Unmarshal(data, &comment)
 	if err != nil {
 		slog.Error(err.Error())

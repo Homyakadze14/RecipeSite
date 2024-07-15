@@ -1,4 +1,4 @@
-package recipe
+package repos
 
 import (
 	"context"
@@ -9,6 +9,8 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/Homyakadze14/RecipeSite/internal/models"
 )
 
 const (
@@ -20,22 +22,22 @@ type RecipeRepository struct {
 	db *sql.DB
 }
 
-func NewRepository(db *sql.DB) *RecipeRepository {
+func NewRecipeRepository(db *sql.DB) *RecipeRepository {
 	return &RecipeRepository{
 		db: db,
 	}
 }
 
-func (repo *RecipeRepository) GetAll(ctx context.Context) ([]Recipe, error) {
+func (repo *RecipeRepository) GetAll(ctx context.Context) ([]models.Recipe, error) {
 	rows, err := repo.db.QueryContext(ctx, "SELECT * FROM recipes")
 
 	if err != nil {
 		return nil, err
 	}
 
-	recipes := make([]Recipe, 0, 10)
+	recipes := make([]models.Recipe, 0, 10)
 	for rows.Next() {
-		var recipe Recipe
+		var recipe models.Recipe
 		err := rows.Scan(&recipe.ID, &recipe.UserID, &recipe.Title, &recipe.About,
 			&recipe.Complexitiy, &recipe.NeedTime, &recipe.Ingridients,
 			&recipe.PhotosUrls, &recipe.Created_at, &recipe.Updated_at)
@@ -48,7 +50,7 @@ func (repo *RecipeRepository) GetAll(ctx context.Context) ([]Recipe, error) {
 	return recipes, nil
 }
 
-func (repo *RecipeRepository) GetFiltered(ctx context.Context, filter *RecipeFilter) ([]Recipe, error) {
+func (repo *RecipeRepository) GetFiltered(ctx context.Context, filter *models.RecipeFilter) ([]models.Recipe, error) {
 	var request strings.Builder
 	params := make([]interface{}, 0, 5)
 
@@ -89,9 +91,9 @@ func (repo *RecipeRepository) GetFiltered(ctx context.Context, filter *RecipeFil
 		return nil, err
 	}
 
-	recipes := make([]Recipe, 0, 10)
+	recipes := make([]models.Recipe, 0, 10)
 	for rows.Next() {
-		var recipe Recipe
+		var recipe models.Recipe
 		err := rows.Scan(&recipe.ID, &recipe.UserID, &recipe.Title, &recipe.About,
 			&recipe.Complexitiy, &recipe.NeedTime, &recipe.Ingridients,
 			&recipe.PhotosUrls, &recipe.Created_at, &recipe.Updated_at)
@@ -104,10 +106,10 @@ func (repo *RecipeRepository) GetFiltered(ctx context.Context, filter *RecipeFil
 	return recipes, nil
 }
 
-func (repo *RecipeRepository) Get(ctx context.Context, id int) (*Recipe, error) {
+func (repo *RecipeRepository) Get(ctx context.Context, id int) (*models.Recipe, error) {
 	row := repo.db.QueryRowContext(ctx, "SELECT * FROM recipes WHERE id=$1", id)
 
-	recipe := &Recipe{}
+	recipe := &models.Recipe{}
 	err := row.Scan(&recipe.ID, &recipe.UserID, &recipe.Title, &recipe.About,
 		&recipe.Complexitiy, &recipe.NeedTime, &recipe.Ingridients,
 		&recipe.PhotosUrls, &recipe.Created_at, &recipe.Updated_at)
@@ -119,7 +121,29 @@ func (repo *RecipeRepository) Get(ctx context.Context, id int) (*Recipe, error) 
 	return recipe, nil
 }
 
-func (repo *RecipeRepository) Create(ctx context.Context, rp *Recipe) error {
+func (repo *RecipeRepository) GetAllByUserID(ctx context.Context, userID int) ([]models.Recipe, error) {
+	rows, err := repo.db.QueryContext(ctx, "SELECT * FROM recipes WHERE user_id=$1", userID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	recipes := make([]models.Recipe, 0, 10)
+	for rows.Next() {
+		var recipe models.Recipe
+		err := rows.Scan(&recipe.ID, &recipe.UserID, &recipe.Title, &recipe.About,
+			&recipe.Complexitiy, &recipe.NeedTime, &recipe.Ingridients,
+			&recipe.PhotosUrls, &recipe.Created_at, &recipe.Updated_at)
+		if err != nil {
+			return nil, err
+		}
+		recipes = append(recipes, recipe)
+	}
+
+	return recipes, nil
+}
+
+func (repo *RecipeRepository) Create(ctx context.Context, rp *models.Recipe) error {
 	_, err := repo.db.ExecContext(ctx, "INSERT INTO recipes(user_id,title,about,complexitiy,need_time,ingridients,photos_urls,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)",
 		rp.UserID, rp.Title, rp.About, rp.Complexitiy, rp.NeedTime, rp.Ingridients, rp.PhotosUrls, time.Now(), time.Now())
 
@@ -130,7 +154,7 @@ func (repo *RecipeRepository) Create(ctx context.Context, rp *Recipe) error {
 	return nil
 }
 
-func (repo *RecipeRepository) Update(ctx context.Context, rp_id int, rp *Recipe) error {
+func (repo *RecipeRepository) Update(ctx context.Context, rp_id int, rp *models.Recipe) error {
 	_, err := repo.db.ExecContext(ctx, "UPDATE recipes SET title=$1,about=$2,complexitiy=$3,need_time=$4,ingridients=$5,photos_urls=$6,updated_at=$7 WHERE id=$8",
 		rp.Title, rp.About, rp.Complexitiy, rp.NeedTime, rp.Ingridients, rp.PhotosUrls, time.Now(), rp_id)
 
@@ -141,7 +165,7 @@ func (repo *RecipeRepository) Update(ctx context.Context, rp_id int, rp *Recipe)
 	return nil
 }
 
-func (repo *RecipeRepository) Delete(ctx context.Context, rp *Recipe) error {
+func (repo *RecipeRepository) Delete(ctx context.Context, rp *models.Recipe) error {
 	_, err := repo.db.ExecContext(ctx, "DELETE FROM recipes WHERE id=$1", rp.ID)
 	return err
 }

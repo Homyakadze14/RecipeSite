@@ -1,4 +1,4 @@
-package user
+package services
 
 import (
 	"database/sql"
@@ -13,6 +13,8 @@ import (
 
 	"github.com/Homyakadze14/RecipeSite/internal/images"
 	"github.com/Homyakadze14/RecipeSite/internal/jsonvalidator"
+	"github.com/Homyakadze14/RecipeSite/internal/models"
+	"github.com/Homyakadze14/RecipeSite/internal/repos"
 	"github.com/Homyakadze14/RecipeSite/internal/session"
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
@@ -21,16 +23,20 @@ import (
 const defaultIconURL = ""
 
 type UserService struct {
-	usrRepo        *UserRepository
+	usrRepo        *repos.UserRepository
+	likeRepo       *repos.LikeRepository
+	recipeRepo     *repos.RecipeRepository
 	sessionManager *session.SessionManager
 	validator      *jsonvalidator.JSONValidator
 }
 
-func NewService(ur *UserRepository, sm *session.SessionManager, v *jsonvalidator.JSONValidator) *UserService {
+func NewService(ur *repos.UserRepository, sm *session.SessionManager, lr *repos.LikeRepository, rr *repos.RecipeRepository, v *jsonvalidator.JSONValidator) *UserService {
 	return &UserService{
 		usrRepo:        ur,
 		validator:      v,
 		sessionManager: sm,
+		likeRepo:       lr,
+		recipeRepo:     rr,
 	}
 }
 
@@ -47,6 +53,9 @@ func (us *UserService) HandlFuncs(handler *mux.Router) {
 	user.Use(us.sessionManager.AuthMiddleware)
 	user.HandleFunc("/{login}", us.update).Methods(http.MethodPut)
 	user.HandleFunc("/{login}/password", us.updatePassword).Methods(http.MethodPut)
+
+	userWithoutAuth := handler.PathPrefix("/user").Subrouter()
+	userWithoutAuth.HandleFunc("/{login}", us.get).Methods(http.MethodGet)
 }
 
 func (us *UserService) signup(w http.ResponseWriter, r *http.Request) {
@@ -59,7 +68,7 @@ func (us *UserService) signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse json values to user
-	usr := &User{}
+	usr := &models.User{}
 	err = json.Unmarshal(data, &usr)
 	if err != nil {
 		slog.Error(err.Error())
@@ -132,7 +141,7 @@ func (us *UserService) signin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse json values to user
-	usr := &UserLogin{}
+	usr := &models.UserLogin{}
 	err = json.Unmarshal(data, &usr)
 	if err != nil {
 		slog.Error(err.Error())
@@ -156,7 +165,7 @@ func (us *UserService) signin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get db user
-	var dbUser *User
+	var dbUser *models.User
 	if usr.Login != "" {
 		dbUser, err = us.usrRepo.GetByLogin(r.Context(), usr.Login)
 		if err != nil {
@@ -272,7 +281,7 @@ func (us *UserService) update(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 
 	// Parse form values to user
-	usr := &UserUpdate{
+	usr := &models.UserUpdate{
 		Email: r.FormValue("email"),
 		Login: r.FormValue("login"),
 		About: r.FormValue("about"),
@@ -363,7 +372,7 @@ func (us *UserService) updatePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse form values to user
-	updUsr := &UserPasswordUpdate{}
+	updUsr := &models.UserPasswordUpdate{}
 	json.Unmarshal(data, &updUsr)
 
 	// validate
@@ -395,4 +404,57 @@ func (us *UserService) updatePassword(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Error(err.Error())
 	}
+}
+
+func (us *UserService) get(w http.ResponseWriter, r *http.Request) {
+	// Get user from db
+	dbUser, err := us.usrRepo.GetByLogin(r.Context(), mux.Vars(r)["login"])
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			slog.Error(err.Error())
+			http.Error(w, "user not found", http.StatusNotFound)
+			return
+		}
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	// Parse to new structure
+	userInfo := &models.UserInfo{}
+	userInfo.ID = dbUser.ID
+	userInfo.Login = dbUser.Login
+	userInfo.About = dbUser.About
+	userInfo.Icon_URL = dbUser.Icon_URL
+	userInfo.Created_at = dbUser.Created_at
+
+	// Get session
+	sess, err := us.sessionManager.GetSession(r)
+	if err == nil {
+		// Check who get user
+		if sess.UserID == dbUser.ID {
+			// Get liked recipes
+			likedRecipes, err := us.likeRepo.GetLikedRecipies(r.Context(), dbUser.ID)
+			if err != nil {
+				slog.Error(err.Error())
+				http.Error(w, "cant get liked recipes!", http.StatusInternalServerError)
+				return
+			}
+			userInfo.LikedRecipies = likedRecipes
+		}
+	}
+
+	// Get recipies
+	recipies, err := us.recipeRepo.GetAllByUserID(r.Context(), userInfo.ID)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "cant get recipes!", http.StatusInternalServerError)
+		return
+	}
+	userInfo.Recipies = recipies
+
+	// Send json
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(userInfo)
 }

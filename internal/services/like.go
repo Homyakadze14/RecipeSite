@@ -1,20 +1,22 @@
-package like
+package services
 
 import (
 	"log/slog"
 	"net/http"
 	"strconv"
 
+	"github.com/Homyakadze14/RecipeSite/internal/models"
+	"github.com/Homyakadze14/RecipeSite/internal/repos"
 	"github.com/Homyakadze14/RecipeSite/internal/session"
 	"github.com/gorilla/mux"
 )
 
 type LikeService struct {
-	likeRepo       *LikeRepository
+	likeRepo       *repos.LikeRepository
 	sessionManager *session.SessionManager
 }
 
-func NewService(lr *LikeRepository, sm *session.SessionManager) *LikeService {
+func NewLikeService(lr *repos.LikeRepository, sm *session.SessionManager) *LikeService {
 	return &LikeService{
 		likeRepo:       lr,
 		sessionManager: sm,
@@ -46,7 +48,7 @@ func (ls *LikeService) like(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Form like
-	like := &Like{
+	like := &models.Like{
 		UserID:   sess.UserID,
 		RecipeID: id,
 	}
@@ -93,7 +95,7 @@ func (ls *LikeService) unlike(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Form like
-	like := &Like{
+	like := &models.Like{
 		UserID:   sess.UserID,
 		RecipeID: id,
 	}

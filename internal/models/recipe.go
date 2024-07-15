@@ -1,10 +1,7 @@
-package recipe
+package models
 
 import (
 	"time"
-
-	"github.com/Homyakadze14/RecipeSite/internal/comment"
-	"github.com/Homyakadze14/RecipeSite/internal/user"
 )
 
 type Recipe struct {
@@ -21,11 +18,11 @@ type Recipe struct {
 }
 
 type FullRecipe struct {
-	Recipe     *Recipe           `json:"recipe"`
-	Author     *user.Author      `json:"author"`
-	LikesCount int               `json:"likes_count"`
-	IsLiked    bool              `json:"is_liked"`
-	Comments   []comment.Comment `json:"comments"`
+	Recipe     *Recipe   `json:"recipe"`
+	Author     *Author   `json:"author"`
+	LikesCount int       `json:"likes_count"`
+	IsLiked    bool      `json:"is_liked"`
+	Comments   []Comment `json:"comments"`
 }
 
 type RecipeFilter struct {

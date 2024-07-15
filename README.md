@@ -42,6 +42,14 @@ password - текст<br>
 <br>
 **Ставит куку**
 
+# Получение информации о пользователе
+**URL:** api/v1/user/{login}<br>
+**METHOD:** GET<br>
+<br>
+**Коды:**<br>
+200,<br>
+404,<br>
+500<br>
 
 ## Обновление login, email, about, icon
 **URL:** api/v1/user/{login}<br>

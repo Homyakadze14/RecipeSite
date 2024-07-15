@@ -8,15 +8,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/Homyakadze14/RecipeSite/internal/comment"
 	"github.com/Homyakadze14/RecipeSite/internal/common/middlewares"
 	"github.com/Homyakadze14/RecipeSite/internal/config"
 	"github.com/Homyakadze14/RecipeSite/internal/database"
 	"github.com/Homyakadze14/RecipeSite/internal/jsonvalidator"
-	"github.com/Homyakadze14/RecipeSite/internal/like"
-	"github.com/Homyakadze14/RecipeSite/internal/recipe"
+	"github.com/Homyakadze14/RecipeSite/internal/repos"
+	"github.com/Homyakadze14/RecipeSite/internal/services"
 	"github.com/Homyakadze14/RecipeSite/internal/session"
-	"github.com/Homyakadze14/RecipeSite/internal/user"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 )
@@ -51,24 +49,26 @@ func main() {
 	// Session manager
 	sm := session.NewSessionManager(db)
 
+	// Repos
+	ur := repos.NewUserRepository(db)
+	lr := repos.NewLikeRepository(db)
+	cr := repos.NewCommentRepository(db)
+	rr := repos.NewRecipeRepository(db)
+
 	// User service
-	ur := user.NewRepository(db)
-	us := user.NewService(ur, sm, vd)
+	us := services.NewService(ur, sm, lr, rr, vd)
 	us.HandlFuncs(v1)
 
 	// Like service
-	lr := like.NewRepository(db)
-	ls := like.NewService(lr, sm)
+	ls := services.NewLikeService(lr, sm)
 	ls.HandlFuncs(v1)
 
 	// Comment service
-	cr := comment.NewRepository(db)
-	cs := comment.NewService(cr, sm, vd)
+	cs := services.NewCommentService(cr, sm, vd)
 	cs.HandlFuncs(v1)
 
 	// Recipe service
-	rr := recipe.NewRepository(db)
-	rs := recipe.NewService(rr, sm, ur, lr, cr, vd)
+	rs := services.NewRecipeService(rr, sm, ur, lr, cr, vd)
 	rs.HandlFuncs(v1)
 
 	// Run server

@@ -1,4 +1,4 @@
-package like
+package models
 
 type Like struct {
 	ID       int

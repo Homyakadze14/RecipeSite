@@ -1,4 +1,4 @@
-package session
+package models
 
 type Session struct {
 	ID     string
