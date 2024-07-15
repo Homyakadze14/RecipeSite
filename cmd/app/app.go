@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/Homyakadze14/RecipeSite/internal/comment"
 	"github.com/Homyakadze14/RecipeSite/internal/common/middlewares"
 	"github.com/Homyakadze14/RecipeSite/internal/config"
 	"github.com/Homyakadze14/RecipeSite/internal/database"
@@ -60,9 +61,14 @@ func main() {
 	ls := like.NewService(lr, sm)
 	ls.HandlFuncs(v1)
 
+	// Comment service
+	cr := comment.NewRepository(db)
+	cs := comment.NewService(cr, sm, vd)
+	cs.HandlFuncs(v1)
+
 	// Recipe service
 	rr := recipe.NewRepository(db)
-	rs := recipe.NewService(rr, sm, ur, lr, vd)
+	rs := recipe.NewService(rr, sm, ur, lr, cr, vd)
 	rs.HandlFuncs(v1)
 
 	// Run server

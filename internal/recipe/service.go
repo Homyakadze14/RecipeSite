@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Homyakadze14/RecipeSite/internal/comment"
 	"github.com/Homyakadze14/RecipeSite/internal/images"
 	"github.com/Homyakadze14/RecipeSite/internal/jsonvalidator"
 	"github.com/Homyakadze14/RecipeSite/internal/like"
@@ -25,17 +26,19 @@ type RecipeService struct {
 	userRepo       *user.UserRepository
 	likeRepo       *like.LikeRepository
 	sessionManager *session.SessionManager
+	commentRepo    *comment.Repository
 	validator      *jsonvalidator.JSONValidator
 }
 
 func NewService(rr *RecipeRepository, sm *session.SessionManager,
-	ur *user.UserRepository, lr *like.LikeRepository, v *jsonvalidator.JSONValidator) *RecipeService {
+	ur *user.UserRepository, lr *like.LikeRepository, cr *comment.Repository, v *jsonvalidator.JSONValidator) *RecipeService {
 	return &RecipeService{
 		recipeRepo:     rr,
 		validator:      v,
 		userRepo:       ur,
 		sessionManager: sm,
 		likeRepo:       lr,
+		commentRepo:    cr,
 	}
 }
 
@@ -145,6 +148,14 @@ func (rs *RecipeService) get(w http.ResponseWriter, r *http.Request) {
 
 	// Get likes count
 	fullRecipe.LikesCount, err = rs.likeRepo.LikesCount(r.Context(), recipe.ID)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Get comments
+	fullRecipe.Comments, err = rs.commentRepo.GetCommets(r.Context(), recipe.ID, rs.userRepo)
 	if err != nil {
 		slog.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -166,3 +166,40 @@ photos - изображения<br>
 200,<br>
 401,<br>
 500<br>
+
+# Добавить комментарий
+**URL:** api/v1/recipe/{id:[0-9]+}/comment<br>
+**METHOD:** POST<br>
+**Принимает json с полями:**<br>
+text - текст(мин 1 симв, макс 250 симв)<br>
+<br>
+**Коды:**<br>
+200,<br>
+400,<br>
+401,<br>
+500<br>
+
+# Обновить комментарий
+**URL:** api/v1/recipe/{id:[0-9]+}/comment<br>
+**METHOD:** PUT<br>
+**Принимает json с полями:**<br>
+id - число<br>
+title - число<br>
+<br>
+**Коды:**<br>
+200,<br>
+400,<br>
+401,<br>
+500<br>
+
+# Удалить комментарий
+**URL:** api/v1/recipe/{id:[0-9]+}/comment<br>
+**METHOD:** DELETE<br>
+**Принимает json с полями:**<br>
+id - число<br>
+<br>
+**Коды:**<br>
+200,<br>
+400,<br>
+401,<br>
+500<br>
