@@ -2,8 +2,8 @@
 
 ## Простой сайт с рецептами
 ## Стэк: 
-**Backend**: golang
-**Storages**: Postgresql, S3
+**Backend**: golang <br/>
+**Storages**: Postgresql, S3 <br/>
 
 ## Документации:
-1. [RestAPI](https://github.com/Homyakadze14/RecipeSite/)
+1. [RestAPI](https://github.com/Homyakadze14/RecipeSite/backend/docs.md)
