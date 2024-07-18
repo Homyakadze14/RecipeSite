@@ -6,4 +6,4 @@
 **Storages**: Postgresql, S3 <br/>
 
 ## Документации:
-1. [RestAPI](https://github.com/Homyakadze14/RecipeSite/backend/docs.md)
+1. [RestAPI](https://github.com/Homyakadze14/RecipeSite/blob/main/backend/docs.md)
