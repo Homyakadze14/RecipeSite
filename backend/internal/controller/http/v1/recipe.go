@@ -190,6 +190,9 @@ func (r *recipeRoutes) create(c *gin.Context) {
 	err = r.u.Create(c, login, recipe)
 	if err != nil {
 		slog.Error(err.Error())
+		if strings.Contains(err.Error(), "RMQ") {
+			// SKIP error
+		}
 		if errors.Is(err, usecases.ErrUserNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": usecases.ErrUserNotFound.Error()})
 			return

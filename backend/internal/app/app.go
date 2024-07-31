@@ -51,8 +51,8 @@ func Run(cfg *config.Config) {
 	likeUseCase := usecases.NewLikeUsecase(repo.NewLikeRepository(pg), sessionUseCase)
 	userUseCase := usecases.NewUserUsecase(repo.NewUserRepository(pg), sessionUseCase, cfg.DEFAULT_ICON_URL, s3, likeUseCase)
 	commentUseCase := usecases.NewCommentUsecase(repo.NewCommentRepository(pg, userUseCase), sessionUseCase)
-	recipeUseCase := usecases.NewRecipeUsecase(repo.NewRecipeRepository(pg), userUseCase, likeUseCase, sessionUseCase, s3, commentUseCase)
-	subscribeUseCase := usecases.NewSubscribeUsecase(repo.NewSubscribeRepository(pg), sessionUseCase)
+	subscribeUseCase := usecases.NewSubscribeUsecase(repo.NewSubscribeRepository(pg), sessionUseCase, rmq)
+	recipeUseCase := usecases.NewRecipeUsecase(repo.NewRecipeRepository(pg), userUseCase, likeUseCase, sessionUseCase, s3, commentUseCase, subscribeUseCase)
 
 	// HTTP Server
 	handler := gin.New()

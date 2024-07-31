@@ -2,11 +2,14 @@ package usecases
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/Homyakadze14/RecipeSite/internal/entities"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 var (
@@ -30,12 +33,14 @@ type sessionManagerForSubscribe interface {
 type SubscribeUseCases struct {
 	storage        subscribeStorage
 	sessionManager sessionManagerForSubscribe
+	rmq            *amqp.Connection
 }
 
-func NewSubscribeUsecase(st subscribeStorage, sm sessionManagerForSubscribe) *SubscribeUseCases {
+func NewSubscribeUsecase(st subscribeStorage, sm sessionManagerForSubscribe, rmq *amqp.Connection) *SubscribeUseCases {
 	return &SubscribeUseCases{
 		storage:        st,
 		sessionManager: sm,
+		rmq:            rmq,
 	}
 }
 
@@ -114,5 +119,44 @@ func (u *SubscribeUseCases) Unsubscribe(ctx context.Context, creator *entities.S
 		return fmt.Errorf("SubscribeUseCases - Unsubscribe - u.storage.Unsubscribe: %w", err)
 	}
 
+	return nil
+}
+
+func (u *SubscribeUseCases) SendToRmq(ctx context.Context, message *entities.NewRecipeRMQMessage) error {
+	ch, err := u.rmq.Channel()
+	if err != nil {
+		return fmt.Errorf("SubscribeUseCases - SendToRmq - u.rmq.Channel: %w", err)
+	}
+
+	q, err := ch.QueueDeclare(
+		"new_recipe",
+		false,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("SubscribeUseCases - SendToRmq - ch.QueueDeclare: %w", err)
+	}
+
+	body, err := json.Marshal(message)
+	if err != nil {
+		return fmt.Errorf("SubscribeUseCases - SendToRmq - json.Marshal: %w", err)
+	}
+	err = ch.PublishWithContext(ctx,
+		"",
+		q.Name,
+		false,
+		false,
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        []byte(body),
+		})
+	if err != nil {
+		return fmt.Errorf("SubscribeUseCases - SendToRmq - ch.PublishWithContext: %w", err)
+	}
+
+	slog.Info(fmt.Sprintf("Recipe with creator %v and post_id %v has been sent to rmq", message.CreatorID, message.RecipeID))
 	return nil
 }

@@ -23,7 +23,7 @@ type recipeStorage interface {
 	GetAll(ctx context.Context) ([]entities.Recipe, error)
 	GetFiltered(ctx context.Context, filter *entities.RecipeFilter) ([]entities.Recipe, error)
 	Get(ctx context.Context, id int) (*entities.Recipe, error)
-	Create(ctx context.Context, recipe *entities.Recipe) error
+	Create(ctx context.Context, recipe *entities.Recipe) (id int, err error)
 	Update(ctx context.Context, updatedRecipe *entities.Recipe) error
 	Delete(ctx context.Context, recipe *entities.Recipe) error
 }
@@ -42,6 +42,10 @@ type likeUseCase interface {
 	IsAlreadyLike(ctx context.Context, like *entities.Like) (bool, error)
 }
 
+type subscribeUseCase interface {
+	SendToRmq(ctx context.Context, message *entities.NewRecipeRMQMessage) error
+}
+
 type commentUseCase interface {
 	GetAll(ctx context.Context, recipeID int) ([]entities.Comment, error)
 }
@@ -52,22 +56,25 @@ type fileStorageForRecipe interface {
 }
 
 type RecipeUseCases struct {
-	storage        recipeStorage
-	userUseCase    userUseCase
-	likeUseCase    likeUseCase
-	sessionManager sessionManagerForRecipe
-	commentUseCase commentUseCase
-	fileStorage    fileStorageForRecipe
+	storage          recipeStorage
+	userUseCase      userUseCase
+	likeUseCase      likeUseCase
+	sessionManager   sessionManagerForRecipe
+	commentUseCase   commentUseCase
+	fileStorage      fileStorageForRecipe
+	subscribeUseCase subscribeUseCase
 }
 
-func NewRecipeUsecase(st recipeStorage, us userUseCase, lu likeUseCase, sm sessionManagerForLike, fs fileStorageForRecipe, cu commentUseCase) *RecipeUseCases {
+func NewRecipeUsecase(st recipeStorage, us userUseCase, lu likeUseCase, sm sessionManagerForLike,
+	fs fileStorageForRecipe, cu commentUseCase, subu subscribeUseCase) *RecipeUseCases {
 	return &RecipeUseCases{
-		storage:        st,
-		sessionManager: sm,
-		userUseCase:    us,
-		likeUseCase:    lu,
-		fileStorage:    fs,
-		commentUseCase: cu,
+		storage:          st,
+		sessionManager:   sm,
+		userUseCase:      us,
+		likeUseCase:      lu,
+		fileStorage:      fs,
+		commentUseCase:   cu,
+		subscribeUseCase: subu,
 	}
 }
 
@@ -207,7 +214,7 @@ func (r *RecipeUseCases) Create(gc *gin.Context, userLogin string, crRecipe *ent
 	}
 
 	// Save to storage
-	err = r.storage.Create(ctx, recipe)
+	id, err := r.storage.Create(ctx, recipe)
 	if err != nil {
 		errImage := r.fileStorage.Remove(recipe.PhotosUrls)
 		if errImage != nil {
@@ -215,6 +222,17 @@ func (r *RecipeUseCases) Create(gc *gin.Context, userLogin string, crRecipe *ent
 		}
 
 		return fmt.Errorf("RecipeUseCase - Create - r.storage.Create: %w", err)
+	}
+
+	// Send to rmq
+	message := &entities.NewRecipeRMQMessage{
+		CreatorID: dbUser.ID,
+		RecipeID:  id,
+	}
+
+	err = r.subscribeUseCase.SendToRmq(ctx, message)
+	if err != nil {
+		return fmt.Errorf("RecipeUseCase - Create - RMQ - r.subscribeUseCase.SendToRmq: %w", err)
 	}
 
 	return nil
