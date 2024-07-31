@@ -123,15 +123,15 @@ func (r *RecipeRepo) Get(ctx context.Context, id int) (*entities.Recipe, error) 
 	return recipe, nil
 }
 
-func (r *RecipeRepo) Create(ctx context.Context, recipe *entities.Recipe) error {
-	_, err := r.Pool.Exec(ctx, "INSERT INTO recipes(user_id,title,about,complexitiy,need_time,ingridients,photos_urls,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)",
+func (r *RecipeRepo) Create(ctx context.Context, recipe *entities.Recipe) (id int, err error) {
+	row := r.Pool.QueryRow(ctx, "INSERT INTO recipes(user_id,title,about,complexitiy,need_time,ingridients,photos_urls,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id",
 		recipe.UserID, recipe.Title, recipe.About, recipe.Complexitiy, recipe.NeedTime, recipe.Ingridients, recipe.PhotosUrls, time.Now(), time.Now())
 
+	err = row.Scan(&id)
 	if err != nil {
-		return fmt.Errorf("RecipeRepo - Create - r.Pool.Exec: %w", err)
+		return -1, fmt.Errorf("RecipeRepo - Create - r.Pool.QueryRow: %w", err)
 	}
-
-	return nil
+	return id, nil
 }
 
 func (r *RecipeRepo) Update(ctx context.Context, updatedRecipe *entities.Recipe) error {

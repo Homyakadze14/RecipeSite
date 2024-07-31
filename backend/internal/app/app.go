@@ -15,6 +15,7 @@ import (
 	"github.com/Homyakadze14/RecipeSite/internal/usecases"
 	"github.com/Homyakadze14/RecipeSite/pkg/httpserver"
 	"github.com/Homyakadze14/RecipeSite/pkg/postgres"
+	"github.com/Homyakadze14/RecipeSite/pkg/rabbitmq"
 	"github.com/gin-gonic/gin"
 )
 
@@ -37,16 +38,25 @@ func Run(cfg *config.Config) {
 		os.Exit(1)
 	}
 
+	// RMQ
+	rmq, err := rabbitmq.New(cfg.RMQ.URL)
+	if err != nil {
+		slog.Error(fmt.Errorf("app - Run - rabbitmq.New: %w", err).Error())
+		os.Exit(1)
+	}
+	defer rmq.Close()
+
 	// Use cases
 	sessionUseCase := usecases.NewSessionUseCase(repo.NewSessionRepository(pg))
 	likeUseCase := usecases.NewLikeUsecase(repo.NewLikeRepository(pg), sessionUseCase)
 	userUseCase := usecases.NewUserUsecase(repo.NewUserRepository(pg), sessionUseCase, cfg.DEFAULT_ICON_URL, s3, likeUseCase)
 	commentUseCase := usecases.NewCommentUsecase(repo.NewCommentRepository(pg, userUseCase), sessionUseCase)
-	recipeUseCase := usecases.NewRecipeUsecase(repo.NewRecipeRepository(pg), userUseCase, likeUseCase, sessionUseCase, s3, commentUseCase)
+	subscribeUseCase := usecases.NewSubscribeUsecase(repo.NewSubscribeRepository(pg), sessionUseCase, rmq)
+	recipeUseCase := usecases.NewRecipeUsecase(repo.NewRecipeRepository(pg), userUseCase, likeUseCase, sessionUseCase, s3, commentUseCase, subscribeUseCase)
 
 	// HTTP Server
 	handler := gin.New()
-	v1.NewRouter(handler, sessionUseCase, userUseCase, likeUseCase, recipeUseCase, commentUseCase)
+	v1.NewRouter(handler, sessionUseCase, userUseCase, likeUseCase, recipeUseCase, commentUseCase, subscribeUseCase)
 	httpServer := httpserver.New(handler, httpserver.Port(cfg.HTTP.Port))
 
 	// Waiting signal

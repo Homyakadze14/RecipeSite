@@ -142,6 +142,13 @@ definitions:
       info:
         $ref: '#/definitions/entities.FullRecipe'
     type: object
+  entities.SubscribeCreator:
+    properties:
+      creator_id:
+        type: integer
+    required:
+    - creator_id
+    type: object
   entities.UserInfo:
     properties:
       about:
@@ -658,4 +665,57 @@ paths:
       summary: Update recipe
       tags:
       - recipe
+  /user/subscribe:
+    post:
+      description: Subscribe to user
+      operationId: subscribe to user
+      parameters:
+      - description: User id to whom we subscribe
+        in: body
+        name: creator
+        required: true
+        schema:
+          $ref: '#/definitions/entities.SubscribeCreator'
+      produces:
+      - application/json
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      summary: Subscribe to user
+      tags:
+      - subscription
+  /user/unsubscribe:
+    post:
+      consumes:
+      - application/json
+      description: Unsubscribe from user
+      operationId: unsubscribe from user
+      parameters:
+      - description: User id to whom we unsubscribe
+        in: body
+        name: creator
+        required: true
+        schema:
+          $ref: '#/definitions/entities.SubscribeCreator'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      summary: Unsubscribe from user
+      tags:
+      - subscription
 swagger: "2.0"

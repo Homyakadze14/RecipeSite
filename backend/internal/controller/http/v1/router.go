@@ -24,7 +24,8 @@ func NewRouter(handler *gin.Engine,
 	user *usecases.UserUseCases,
 	like *usecases.LikeUseCases,
 	recipe *usecases.RecipeUseCases,
-	comment *usecases.CommentUseCases) {
+	comment *usecases.CommentUseCases,
+	subscribe *usecases.SubscribeUseCases) {
 	// Options
 	handler.Use(gin.Logger())
 	handler.Use(gin.Recovery())
@@ -46,5 +47,6 @@ func NewRouter(handler *gin.Engine,
 		NewLikeRoutes(h, like, sess)
 		NewRecipeRoutes(h, recipe, sess)
 		NewCommentRoutes(h, comment, sess, user)
+		NewSubscribeRoutes(h, subscribe, sess)
 	}
 }

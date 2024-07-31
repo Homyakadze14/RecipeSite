@@ -33,7 +33,6 @@ type sessionManager interface {
 	Create(ctx context.Context, userID int) (*entities.Session, error)
 	GetSession(r *http.Request) (*entities.Session, error)
 	DestroySession(ctx *gin.Context) error
-	Auth() gin.HandlerFunc
 	DestroyAllSessions(ctx context.Context, userID int) error
 }
 
