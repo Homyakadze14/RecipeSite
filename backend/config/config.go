@@ -16,6 +16,7 @@ type (
 		HTTP `yaml:"http"`
 		PG   `yaml:"postgres"`
 		S3   `yaml:"s3"`
+		RMQ  `yaml:"rmq"`
 	}
 
 	// App -.
@@ -33,6 +34,10 @@ type (
 	PG struct {
 		PoolMax int    `env-required:"true" yaml:"pool_max" env:"PG_POOL_MAX"`
 		URL     string `env-required:"true"                 env:"PG_URL"`
+	}
+
+	RMQ struct {
+		URL string `env-required:"true"                 env:"RMQ_URL"`
 	}
 
 	// S3

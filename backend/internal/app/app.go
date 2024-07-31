@@ -15,6 +15,7 @@ import (
 	"github.com/Homyakadze14/RecipeSite/internal/usecases"
 	"github.com/Homyakadze14/RecipeSite/pkg/httpserver"
 	"github.com/Homyakadze14/RecipeSite/pkg/postgres"
+	"github.com/Homyakadze14/RecipeSite/pkg/rabbitmq"
 	"github.com/gin-gonic/gin"
 )
 
@@ -36,6 +37,14 @@ func Run(cfg *config.Config) {
 		slog.Error(fmt.Errorf("app - Run - filestorage.NewS3Storage: %w", err).Error())
 		os.Exit(1)
 	}
+
+	// RMQ
+	rmq, err := rabbitmq.New(cfg.RMQ.URL)
+	if err != nil {
+		slog.Error(fmt.Errorf("app - Run - rabbitmq.New: %w", err).Error())
+		os.Exit(1)
+	}
+	defer rmq.Close()
 
 	// Use cases
 	sessionUseCase := usecases.NewSessionUseCase(repo.NewSessionRepository(pg))

@@ -11,6 +11,12 @@ services:
     ports:
       - 5432:5432
 
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3.8.12-management
+    ports:
+      - 5672:5672
+
   app:
     build: ./backend
     container_name: app
@@ -23,6 +29,7 @@ services:
       - 8080:8080
     depends_on:
       - postgres
+      - rabbitmq
 
 volumes:
   pg-data:
