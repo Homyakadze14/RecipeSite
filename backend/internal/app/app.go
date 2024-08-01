@@ -49,7 +49,8 @@ func Run(cfg *config.Config) {
 	// Use cases
 	sessionUseCase := usecases.NewSessionUseCase(repo.NewSessionRepository(pg))
 	likeUseCase := usecases.NewLikeUsecase(repo.NewLikeRepository(pg), sessionUseCase)
-	userUseCase := usecases.NewUserUsecase(repo.NewUserRepository(pg), sessionUseCase, cfg.DEFAULT_ICON_URL, s3, likeUseCase)
+	jwtUseCase := usecases.NewJWTUsecase([]byte(cfg.JWT.SECRET_KEY))
+	userUseCase := usecases.NewUserUsecase(repo.NewUserRepository(pg), sessionUseCase, cfg.DEFAULT_ICON_URL, s3, likeUseCase, jwtUseCase)
 	commentUseCase := usecases.NewCommentUsecase(repo.NewCommentRepository(pg, userUseCase), sessionUseCase)
 	subscribeUseCase := usecases.NewSubscribeUsecase(repo.NewSubscribeRepository(pg), sessionUseCase, rmq)
 	recipeUseCase := usecases.NewRecipeUsecase(repo.NewRecipeRepository(pg), userUseCase, likeUseCase, sessionUseCase, s3, commentUseCase, subscribeUseCase)

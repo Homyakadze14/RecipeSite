@@ -40,22 +40,29 @@ type likeUsecases interface {
 	GetLikedRecipies(ctx context.Context, userID int) ([]entities.Recipe, error)
 }
 
+type jwtUseCase interface {
+	GenerateJWT(userID int) (*entities.JWTToken, error)
+	GetDataFromJWT(inToken *entities.JWTToken) (*entities.JWTData, error)
+}
+
 type UserUseCases struct {
 	storage        userStorage
 	fileStorage    fileStorage
 	sessionManager sessionManager
 	likeUseCases   likeUsecases
 	defaultIconUrl string
+	jwtUseCase     jwtUseCase
 }
 
 func NewUserUsecase(st userStorage, sm sessionManager, df string,
-	fs fileStorage, lu likeUsecases) *UserUseCases {
+	fs fileStorage, lu likeUsecases, jwt jwtUseCase) *UserUseCases {
 	return &UserUseCases{
 		storage:        st,
 		sessionManager: sm,
 		defaultIconUrl: df,
 		fileStorage:    fs,
 		likeUseCases:   lu,
+		jwtUseCase:     jwt,
 	}
 }
 
@@ -66,6 +73,34 @@ var (
 	ErrUserNoPermisions  = errors.New("no permissions")
 	ErrUserNotImage      = errors.New("icon must be image")
 )
+
+func (u *UserUseCases) GenerateJWT(r *http.Request) (*entities.JWTToken, error) {
+	// Get session
+	sess, err := u.sessionManager.GetSession(r)
+	if err != nil {
+		return nil, fmt.Errorf("UserUseCase - GenerateJWT - u.sessionManager.GetSession: %w", err)
+	}
+
+	// Generate token
+	token, err := u.jwtUseCase.GenerateJWT(sess.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("UserUseCase - GenerateJWT - u.jwtUseCase.GenerateJWT: %w", err)
+	}
+
+	return token, nil
+}
+
+func (u *UserUseCases) GetDataFromJWT(token *entities.JWTToken) (*entities.JWTData, error) {
+	data, err := u.jwtUseCase.GetDataFromJWT(token)
+	if err != nil {
+		if errors.Is(err, ErrBadToken) {
+			return nil, ErrBadToken
+		}
+		return nil, fmt.Errorf("UserUseCase - GetDataFromJWT - u.jwtUseCase.GetDataFromJWT: %w", err)
+	}
+
+	return data, nil
+}
 
 func (u *UserUseCases) GetAuthor(ctx context.Context, id int) (*entities.Author, error) {
 	author, err := u.storage.GetAuthor(ctx, id)

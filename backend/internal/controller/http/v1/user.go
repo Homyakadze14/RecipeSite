@@ -28,12 +28,14 @@ func NewUserRoutes(handler *gin.RouterGroup, u *usecases.UserUseCases, su *useca
 	{
 		h.POST("/signup", r.signup)
 		h.POST("/signin", r.signin)
+		h.POST("/checktgtoken", r.checkTGToken)
 	}
 
 	a := handler.Group("/auth")
 	{
 		a.Use(su.Auth())
 		a.POST("/logout", r.logout)
+		a.GET("/tgtoken", r.tgToken)
 	}
 
 	usr := handler.Group("/user")
@@ -47,6 +49,60 @@ func NewUserRoutes(handler *gin.RouterGroup, u *usecases.UserUseCases, su *useca
 	{
 		us.GET("/:login", r.get)
 	}
+}
+
+// @Summary     Generate user telegram token
+// @Description Generate user telegram token
+// @ID          generate user telegram token
+// @Tags  	    auth
+// @Produce     json
+// @Success     200 {object} entities.JWTToken
+// @Failure     401
+// @Failure     500
+// @Router      /auth/tgtoken [get]
+func (r *userRoutes) tgToken(c *gin.Context) {
+	token, err := r.u.GenerateJWT(c.Request)
+	if err != nil {
+		slog.Error(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		return
+	}
+
+	c.JSON(http.StatusOK, token)
+}
+
+// @Summary     Check user telegram token
+// @Description Check user telegram token
+// @ID          Check user telegram token
+// @Tags  	    auth
+// @Param 		token body entities.JWTToken  true  "token"
+// @Accept 		json
+// @Produce     json
+// @Success     200 {object} entities.JWTData
+// @Failure     400
+// @Failure     401
+// @Failure     500
+// @Router      /auth/checktgtoken [post]
+func (r *userRoutes) checkTGToken(c *gin.Context) {
+	var token *entities.JWTToken
+	if err := c.ShouldBindJSON(&token); err != nil {
+		slog.Error(err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.GetErrMessages(err).Error()})
+		return
+	}
+
+	data, err := r.u.GetDataFromJWT(token)
+	if err != nil {
+		slog.Error(err.Error())
+		if errors.Is(err, usecases.ErrBadToken) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		return
+	}
+
+	c.JSON(http.StatusOK, data)
 }
 
 // @Summary     Sign up

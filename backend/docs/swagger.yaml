@@ -72,6 +72,17 @@ definitions:
       user:
         $ref: '#/definitions/entities.UserInfo'
     type: object
+  entities.JWTData:
+    properties:
+      user_id: {}
+    type: object
+  entities.JWTToken:
+    properties:
+      token:
+        type: string
+    required:
+    - token
+    type: object
   entities.Recipe:
     properties:
       about:
@@ -203,6 +214,35 @@ info:
   title: RecipeSite
   version: "1.0"
 paths:
+  /auth/checktgtoken:
+    post:
+      consumes:
+      - application/json
+      description: Check user telegram token
+      operationId: Check user telegram token
+      parameters:
+      - description: token
+        in: body
+        name: token
+        required: true
+        schema:
+          $ref: '#/definitions/entities.JWTToken'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.JWTData'
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      summary: Check user telegram token
+      tags:
+      - auth
   /auth/logout:
     post:
       description: Logout user
@@ -271,6 +311,24 @@ paths:
         "500":
           description: Internal Server Error
       summary: Sign up
+      tags:
+      - auth
+  /auth/tgtoken:
+    get:
+      description: Generate user telegram token
+      operationId: generate user telegram token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.JWTToken'
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      summary: Generate user telegram token
       tags:
       - auth
   /recipe:

@@ -1,1 +1,1 @@
-from bot.misc.env import TgKeys
+from bot.misc.singleton import SingletonMeta

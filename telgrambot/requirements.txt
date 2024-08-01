@@ -1,3 +1,6 @@
 aiogram
 loguru
 python-dotenv
+psycopg2
+sqlalchemy
+requests

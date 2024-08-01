@@ -6,4 +6,4 @@ router = Router()
 
 @router.message(F.text)
 async def echo(message: Message):
-    await message.answer(message.text)
+    await message.answer("Я не знаю такой команды :(")

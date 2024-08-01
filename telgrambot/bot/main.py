@@ -1,9 +1,9 @@
 from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from loguru import logger
 
-from bot.misc import TgKeys
 from bot.database.models import register_models
 
 from bot.handlers.main import get_all_routers
@@ -15,8 +15,8 @@ import os
 async def start_bot():
     if os.environ.get("GIN_MODE") != "release":
        load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
-    
-    bot = Bot(token=os.environ.get("TOKEN"), parse_mode='HTML')
+
+    bot = Bot(token=os.environ.get("TOKEN"), default=DefaultBotProperties(parse_mode='HTML'))
     dp = Dispatcher(storage=MemoryStorage())
 
     logger.info('Bot starts!')

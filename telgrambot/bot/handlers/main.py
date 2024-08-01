@@ -1,6 +1,6 @@
-from bot.handlers import admin, other, user
+from bot.handlers import other, user
 from aiogram import Router
 
 
 def get_all_routers() -> list[Router]:
-    return [admin.main.router, user.main.router, other.router]
+    return [user.main.router, other.router]

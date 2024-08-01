@@ -17,6 +17,7 @@ type (
 		PG   `yaml:"postgres"`
 		S3   `yaml:"s3"`
 		RMQ  `yaml:"rmq"`
+		JWT  `yaml:"jwt"`
 	}
 
 	// App -.
@@ -47,6 +48,11 @@ type (
 		BUCKET_NAME       string `env-required:"true" env:"S3_BUCKET_NAME"`
 		ENDPOINT          string `env-required:"true" env:"S3_ENDPOINT"`
 		DEFAULT_ICON_URL  string `env-required:"true" env:"DEFAULT_ICON_URL"`
+	}
+
+	// JWT
+	JWT struct {
+		SECRET_KEY string `env-required:"true" env:"JWT_SECRET_KEY"`
 	}
 )
 
