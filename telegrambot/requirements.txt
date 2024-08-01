@@ -1,7 +1,7 @@
 aiogram
 loguru
 python-dotenv
-psycopg2
+psycopg2-binary
 sqlalchemy
 requests
 aio_pika

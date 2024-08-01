@@ -2,6 +2,7 @@ services:
   postgres:
     container_name: postgres
     image: postgres
+    restart: always
     volumes:
       - pg-data:/var/lib/postgresql/data
     environment:
@@ -14,6 +15,7 @@ services:
   rabbitmq:
     container_name: rabbitmq
     image: rabbitmq:3.8.12-management
+    restart: always
     ports:
       - 5672:5672
 
@@ -21,6 +23,7 @@ services:
     build: ./backend
     container_name: app
     image: app
+    restart: always
     env_file: backend/.env
     environment:
       GIN_MODE: release
@@ -31,6 +34,19 @@ services:
     depends_on:
       - postgres
       - rabbitmq
+
+  tg-bot:
+    build: ./telegrambot
+    container_name: tg-bot
+    image: tg-bot
+    restart: always
+    env_file: telegrambot/bot/.env
+    environment:
+      BACKEND_BASE_URL: "http://localhost:8080/v1"
+      DB_URL: 'postgresql://user:pass@postgres:5432/postgres'
+      RMQ_URL: 'amqp://guest:guest@rabbitmq:5672/'
+    depends_on:
+      - app
 
 volumes:
   pg-data:

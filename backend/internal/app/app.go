@@ -64,6 +64,8 @@ func Run(cfg *config.Config) {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
 
+	slog.Info("app - Run - start working")
+
 	select {
 	case s := <-interrupt:
 		slog.Info("app - Run - signal: " + s.String())
