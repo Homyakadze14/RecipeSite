@@ -42,7 +42,7 @@ async def login(message: Message, state: FSMContext):
 @router.message(F.text, Login.token)
 async def enter_token(message: Message, state: FSMContext):
     try:
-        r = requests.post(environ.get("BACKEND_CHECK_TOKEN_URL"), json={"token": message.text})
+        r = requests.post(environ.get("BACKEND_BASE_URL") + "/auth/checktgtoken", json={"token": message.text})
         if r.status_code == 400:
             await message.answer(f"Ваш код не действителен, попробуйте ещё раз")
             return

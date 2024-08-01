@@ -9,7 +9,8 @@ from bot.database.models import register_models
 from bot.handlers.main import get_all_routers
 
 from dotenv import load_dotenv
-import os
+import os, asyncio
+from bot.misc import daemon
 
 
 async def start_bot():
@@ -24,4 +25,5 @@ async def start_bot():
     register_models()
 
     await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
+    loop = asyncio.get_event_loop()
+    await asyncio.gather(dp.start_polling(bot), daemon.run(bot, loop))
