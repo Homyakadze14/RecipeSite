@@ -8,3 +8,6 @@
 **Documentation**: Swagger <br/>
 **Telegram bot**: Python+Aigoram <br/>
 **Message broker**: RabbitMQ <br/>
+
+## Как запустить всё в докере:
+docker-compose up --build
