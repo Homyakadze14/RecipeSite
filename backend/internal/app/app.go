@@ -12,10 +12,12 @@ import (
 	v1 "github.com/Homyakadze14/RecipeSite/internal/controller/http/v1"
 	"github.com/Homyakadze14/RecipeSite/internal/filestorage"
 	repo "github.com/Homyakadze14/RecipeSite/internal/repository/postgres"
+	redisrepo "github.com/Homyakadze14/RecipeSite/internal/repository/redis"
 	"github.com/Homyakadze14/RecipeSite/internal/usecases"
 	"github.com/Homyakadze14/RecipeSite/pkg/httpserver"
 	"github.com/Homyakadze14/RecipeSite/pkg/postgres"
 	"github.com/Homyakadze14/RecipeSite/pkg/rabbitmq"
+	"github.com/Homyakadze14/RecipeSite/pkg/redis"
 	"github.com/gin-gonic/gin"
 )
 
@@ -46,6 +48,14 @@ func Run(cfg *config.Config) {
 	}
 	defer rmq.Close()
 
+	// Redis
+	redis, err := redis.New(cfg.Redis)
+	if err != nil {
+		slog.Error(fmt.Errorf("app - Run - redis.New: %w", err).Error())
+		os.Exit(1)
+	}
+	defer redis.Close()
+
 	// Use cases
 	sessionUseCase := usecases.NewSessionUseCase(repo.NewSessionRepository(pg))
 	likeUseCase := usecases.NewLikeUsecase(repo.NewLikeRepository(pg), sessionUseCase)
@@ -53,7 +63,8 @@ func Run(cfg *config.Config) {
 	userUseCase := usecases.NewUserUsecase(repo.NewUserRepository(pg), sessionUseCase, cfg.DEFAULT_ICON_URL, s3, likeUseCase, jwtUseCase)
 	commentUseCase := usecases.NewCommentUsecase(repo.NewCommentRepository(pg, userUseCase), sessionUseCase)
 	subscribeUseCase := usecases.NewSubscribeUsecase(repo.NewSubscribeRepository(pg), sessionUseCase, rmq)
-	recipeUseCase := usecases.NewRecipeUsecase(repo.NewRecipeRepository(pg), userUseCase, likeUseCase, sessionUseCase, s3, commentUseCase, subscribeUseCase)
+	recipeUseCase := usecases.NewRecipeUsecase(repo.NewRecipeRepository(pg), userUseCase, likeUseCase, sessionUseCase, 
+	s3, commentUseCase, subscribeUseCase, redisrepo.NewRecipeRedisRepository(redis))
 
 	// HTTP Server
 	handler := gin.New()

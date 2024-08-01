@@ -1,6 +1,9 @@
 package entities
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type Recipe struct {
 	ID          int       `json:"id"`
@@ -41,6 +44,14 @@ type FullRecipe struct {
 	LikesCount int       `json:"likes_count"`
 	IsLiked    bool      `json:"is_liked"`
 	Comments   []Comment `json:"comments"`
+}
+
+func (r FullRecipe) MarshalBinary() ([]byte, error) {
+	return json.Marshal(r)
+}
+
+func (r *FullRecipe) UnmarshalBinary(data []byte) error {
+	return json.Unmarshal(data, &r)
 }
 
 type RecipeFilter struct {

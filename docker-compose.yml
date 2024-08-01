@@ -19,6 +19,19 @@ services:
     ports:
       - 5672:5672
 
+  redis:
+    container_name: redis
+    image: redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - /path/to/local/dаta:/root/redis
+      - /path/to/local/redis.conf:/usr/local/etc/redis/redis.conf
+    environment:
+      - REDIS_PASSWORD=redispassword
+      - REDIS_PORT=6379
+
   app:
     build: ./backend
     container_name: app
@@ -29,11 +42,14 @@ services:
       GIN_MODE: release
       PG_URL: 'postgres://user:pass@postgres:5432/postgres'
       RMQ_URL: 'amqp://guest:guest@rabbitmq:5672/'
+      REDIS_ADDRESS: 'redis:6379'
+      REDIS_PASSWORD: 'redispassword'
     ports:
       - 8080:8080
     depends_on:
       - postgres
       - rabbitmq
+      - redis
 
   tg-bot:
     build: ./telegrambot

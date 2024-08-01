@@ -12,12 +12,13 @@ import (
 type (
 	// Config -.
 	Config struct {
-		App  `yaml:"app"`
-		HTTP `yaml:"http"`
-		PG   `yaml:"postgres"`
-		S3   `yaml:"s3"`
-		RMQ  `yaml:"rmq"`
-		JWT  `yaml:"jwt"`
+		App   `yaml:"app"`
+		HTTP  `yaml:"http"`
+		PG    `yaml:"postgres"`
+		S3    `yaml:"s3"`
+		RMQ   `yaml:"rmq"`
+		JWT   `yaml:"jwt"`
+		Redis `yaml:"redis"`
 	}
 
 	// App -.
@@ -53,6 +54,12 @@ type (
 	// JWT
 	JWT struct {
 		SECRET_KEY string `env-required:"true" env:"JWT_SECRET_KEY"`
+	}
+
+	// Redis
+	Redis struct {
+		ADDRESS  string `env-required:"true"    env:"REDIS_ADDRESS"`
+		PASSWORD string `env-required:"true"    env:"REDIS_PASSWORD"`
 	}
 )
 

@@ -4,7 +4,7 @@
 
 ## Стэк: 
 **Backend**: golang <br/>
-**Storages**: Postgresql, S3 <br/>
+**Storages**: Postgresql, S3, Redis <br/>
 **Documentation**: Swagger <br/>
 **Telegram bot**: Python+Aigoram <br/>
 **Message broker**: RabbitMQ <br/>

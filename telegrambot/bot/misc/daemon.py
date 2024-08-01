@@ -1,4 +1,5 @@
-import aio_pika
+import aio_pika, asyncio, os
+from loguru import logger
 from os import environ
 import ast, requests
 from bot.database.methods import get
@@ -36,9 +37,20 @@ async def send_messages(bot, message):
 
 
 async def run(bot, loop):
-    connection = await aio_pika.connect_robust(
-        environ.get("RMQ_URL"), loop=loop
-    )
+    counter = 10
+    for i in range(1, 11):
+        try:
+            connection = await aio_pika.connect_robust(
+                environ.get("RMQ_URL"), loop=loop
+            )
+        except:
+            logger.error(f"Try to connect to rabbit: {counter}")
+            counter -= 1
+            await asyncio.sleep(5)
+
+    if counter == 0:
+        logger.error(f"Can't connect to rabbit")
+        os._exit(1)
 
     async with connection:
         queue_name = "new_recipe"

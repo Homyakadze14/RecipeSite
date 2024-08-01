@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Homyakadze14/RecipeSite/internal/entities"
+	redisrepo "github.com/Homyakadze14/RecipeSite/internal/repository/redis"
 	"github.com/gin-gonic/gin"
 )
 
@@ -55,26 +56,33 @@ type fileStorageForRecipe interface {
 	Remove(path string) error
 }
 
+type redisRecipeRepository interface {
+	Set(ctx context.Context, key string, recipe entities.FullRecipe) error
+	Get(ctx context.Context, key string) (recipe entities.FullRecipe, err error)
+}
+
 type RecipeUseCases struct {
-	storage          recipeStorage
-	userUseCase      userUseCase
-	likeUseCase      likeUseCase
-	sessionManager   sessionManagerForRecipe
-	commentUseCase   commentUseCase
-	fileStorage      fileStorageForRecipe
-	subscribeUseCase subscribeUseCase
+	storage               recipeStorage
+	userUseCase           userUseCase
+	likeUseCase           likeUseCase
+	sessionManager        sessionManagerForRecipe
+	commentUseCase        commentUseCase
+	fileStorage           fileStorageForRecipe
+	subscribeUseCase      subscribeUseCase
+	redisRecipeRepository redisRecipeRepository
 }
 
 func NewRecipeUsecase(st recipeStorage, us userUseCase, lu likeUseCase, sm sessionManagerForLike,
-	fs fileStorageForRecipe, cu commentUseCase, subu subscribeUseCase) *RecipeUseCases {
+	fs fileStorageForRecipe, cu commentUseCase, subu subscribeUseCase, redRep redisRecipeRepository) *RecipeUseCases {
 	return &RecipeUseCases{
-		storage:          st,
-		sessionManager:   sm,
-		userUseCase:      us,
-		likeUseCase:      lu,
-		fileStorage:      fs,
-		commentUseCase:   cu,
-		subscribeUseCase: subu,
+		storage:               st,
+		sessionManager:        sm,
+		userUseCase:           us,
+		likeUseCase:           lu,
+		fileStorage:           fs,
+		commentUseCase:        cu,
+		subscribeUseCase:      subu,
+		redisRecipeRepository: redRep,
 	}
 }
 
@@ -98,38 +106,52 @@ func (r *RecipeUseCases) GetFiltered(ctx context.Context, filter *entities.Recip
 }
 
 func (r *RecipeUseCases) Get(ctx context.Context, req *http.Request, recipeID int) (*entities.FullRecipe, error) {
-	fullRecipe := &entities.FullRecipe{}
-
-	// Get recipe
-	recipe, err := r.storage.Get(ctx, recipeID)
+	// Get recipe from redis
+	redisKey := fmt.Sprintf("recipe:%v", recipeID)
+	fullRecipe, err := r.redisRecipeRepository.Get(ctx, redisKey)
 	if err != nil {
-		if errors.Is(err, ErrRecipeNotFound) {
-			return nil, ErrRecipeNotFound
+		fullRecipe = entities.FullRecipe{}
+		if errors.Is(err, redisrepo.ErrRedisKeyNotFound) {
+			// Get recipe
+			recipe, err := r.storage.Get(ctx, recipeID)
+			if err != nil {
+				if errors.Is(err, ErrRecipeNotFound) {
+					return nil, ErrRecipeNotFound
+				}
+				return nil, fmt.Errorf("RecipeUseCase - Get - r.storage.Get: %w", err)
+			}
+			fullRecipe.Recipe = recipe
+
+			// Get Author
+			author, err := r.userUseCase.GetAuthor(ctx, recipe.UserID)
+			if err != nil {
+				if errors.Is(err, ErrUserNotFound) {
+					return nil, ErrUserNotFound
+				}
+				return nil, fmt.Errorf("RecipeUseCase - Get - r.userUseCase.GetAuthor: %w", err)
+			}
+			fullRecipe.Author = author
+
+			// Get likes count
+			fullRecipe.LikesCount, err = r.likeUseCase.LikesCount(ctx, recipe.ID)
+			if err != nil {
+				return nil, fmt.Errorf("RecipeUseCase - Get - r.likeUseCase.LikesCount: %w", err)
+			}
+
+			// Get comments
+			fullRecipe.Comments, err = r.commentUseCase.GetAll(ctx, recipe.ID)
+			if err != nil {
+				return nil, fmt.Errorf("RecipeUseCase - Get - r.commentUseCase.GetCommets: %w", err)
+			}
+
+			// Save to redis
+			err = r.redisRecipeRepository.Set(ctx, redisKey, fullRecipe)
+			if err != nil {
+				return nil, fmt.Errorf("RecipeUseCase - Get - r.redisRecipeRepository.Set: %w", err)
+			}
+		} else {
+			return nil, fmt.Errorf("RecipeUseCase - Get - r.redisRecipeRepository.Get: %w", err)
 		}
-		return nil, fmt.Errorf("RecipeUseCase - Get - r.storage.Get: %w", err)
-	}
-	fullRecipe.Recipe = recipe
-
-	// Get Author
-	author, err := r.userUseCase.GetAuthor(ctx, recipe.UserID)
-	if err != nil {
-		if errors.Is(err, ErrUserNotFound) {
-			return nil, ErrUserNotFound
-		}
-		return nil, fmt.Errorf("RecipeUseCase - Get - r.userUseCase.GetAuthor: %w", err)
-	}
-	fullRecipe.Author = author
-
-	// Get likes count
-	fullRecipe.LikesCount, err = r.likeUseCase.LikesCount(ctx, recipe.ID)
-	if err != nil {
-		return nil, fmt.Errorf("RecipeUseCase - Get - r.likeUseCase.LikesCount: %w", err)
-	}
-
-	// Get comments
-	fullRecipe.Comments, err = r.commentUseCase.GetAll(ctx, recipe.ID)
-	if err != nil {
-		return nil, fmt.Errorf("RecipeUseCase - Get - r.commentUseCase.GetCommets: %w", err)
 	}
 
 	// Get session
@@ -138,7 +160,7 @@ func (r *RecipeUseCases) Get(ctx context.Context, req *http.Request, recipeID in
 		// check is user liked this recipe
 		like := &entities.Like{
 			UserID:   sess.UserID,
-			RecipeID: recipe.ID,
+			RecipeID: fullRecipe.Recipe.ID,
 		}
 		fullRecipe.IsLiked, err = r.likeUseCase.IsAlreadyLike(ctx, like)
 		if err != nil {
@@ -146,7 +168,7 @@ func (r *RecipeUseCases) Get(ctx context.Context, req *http.Request, recipeID in
 		}
 	}
 
-	return fullRecipe, nil
+	return &fullRecipe, nil
 }
 
 func (r *RecipeUseCases) Create(gc *gin.Context, userLogin string, crRecipe *entities.CreateRecipe) error {
