@@ -60,6 +60,10 @@ func (r *CommentRepo) GetByID(ctx context.Context, id int) (*entities.Comment, e
 		}
 		return nil, fmt.Errorf("CommentRepo - GetByID -  row.Scan: %w", err)
 	}
+	comment.Author, err = r.us.GetAuthor(ctx, comment.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("CommentRepo - GetByID - r.us.GetAuthor: %w", err)
+	}
 
 	return comment, nil
 }

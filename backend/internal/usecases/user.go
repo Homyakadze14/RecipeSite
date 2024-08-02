@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Homyakadze14/RecipeSite/internal/entities"
+	redisrepo "github.com/Homyakadze14/RecipeSite/internal/repository/redis"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -45,6 +46,12 @@ type jwtUseCase interface {
 	GetDataFromJWT(inToken *entities.JWTToken) (*entities.JWTData, error)
 }
 
+type cache interface {
+	Set(ctx context.Context, key string, value interface{}) error
+	Get(ctx context.Context, key string, dest interface{}) error
+	Del(ctx context.Context, key string) (res int64, err error)
+}
+
 type UserUseCases struct {
 	storage        userStorage
 	fileStorage    fileStorage
@@ -52,10 +59,11 @@ type UserUseCases struct {
 	likeUseCases   likeUsecases
 	defaultIconUrl string
 	jwtUseCase     jwtUseCase
+	cache          cache
 }
 
 func NewUserUsecase(st userStorage, sm sessionManager, df string,
-	fs fileStorage, lu likeUsecases, jwt jwtUseCase) *UserUseCases {
+	fs fileStorage, lu likeUsecases, jwt jwtUseCase, cache cache) *UserUseCases {
 	return &UserUseCases{
 		storage:        st,
 		sessionManager: sm,
@@ -63,6 +71,7 @@ func NewUserUsecase(st userStorage, sm sessionManager, df string,
 		fileStorage:    fs,
 		likeUseCases:   lu,
 		jwtUseCase:     jwt,
+		cache:          cache,
 	}
 }
 
@@ -103,9 +112,26 @@ func (u *UserUseCases) GetDataFromJWT(token *entities.JWTToken) (*entities.JWTDa
 }
 
 func (u *UserUseCases) GetAuthor(ctx context.Context, id int) (*entities.Author, error) {
-	author, err := u.storage.GetAuthor(ctx, id)
+	// Get author from cache
+	cackeKey := fmt.Sprintf("author:%v", id)
+	author := &entities.Author{}
+	err := u.cache.Get(ctx, cackeKey, author)
 	if err != nil {
-		return nil, fmt.Errorf("UserUseCase - GetAuthor - u.storage.GetAuthor: %w", err)
+		if errors.Is(err, redisrepo.ErrRedisKeyNotFound) {
+			// Get author from db
+			author, err = u.storage.GetAuthor(ctx, id)
+			if err != nil {
+				return nil, fmt.Errorf("UserUseCase - GetAuthor - u.storage.GetAuthor: %w", err)
+			}
+
+			// Save to cache
+			err = u.cache.Set(ctx, cackeKey, author)
+			if err != nil {
+				return nil, fmt.Errorf("UserUseCase - GetAuthor - u.cache.Set: %w", err)
+			}
+		} else {
+			return nil, fmt.Errorf("UserUseCase - GetAuthor -  u.cache.Get: %w", err)
+		}
 	}
 
 	return author, nil
@@ -272,6 +298,12 @@ func (u *UserUseCases) Update(gc *gin.Context, login string, user *entities.User
 			return "", fmt.Errorf("UserUseCase - Update - u.storage.Update: %w; UserUseCase - Update - u.fileStorage.Remove(user.Icon_URL): %w", err, imgerr)
 		}
 		return "", fmt.Errorf("UserUseCase - Update - u.storage.Update: %w", err)
+	}
+
+	// Delete author from cache
+	_, err = u.cache.Del(ctx, fmt.Sprintf("author:%v", dbUser.ID))
+	if err != nil {
+		return "", fmt.Errorf("UserUseCase - Update - u.cache.Del: %w", err)
 	}
 
 	// Remove old icon if exist

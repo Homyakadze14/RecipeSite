@@ -57,15 +57,17 @@ func Run(cfg *config.Config) {
 	}
 	defer redis.Close()
 
+	redisRepo := redisrepo.NewRedisRepository(redis)
+
 	// Use cases
 	sessionUseCase := usecases.NewSessionUseCase(repo.NewSessionRepository(pg))
 	likeUseCase := usecases.NewLikeUsecase(repo.NewLikeRepository(pg), sessionUseCase)
 	jwtUseCase := usecases.NewJWTUsecase([]byte(cfg.JWT.SECRET_KEY))
-	userUseCase := usecases.NewUserUsecase(repo.NewUserRepository(pg), sessionUseCase, cfg.DEFAULT_ICON_URL, s3, likeUseCase, jwtUseCase)
+	userUseCase := usecases.NewUserUsecase(repo.NewUserRepository(pg), sessionUseCase, cfg.DEFAULT_ICON_URL, s3, likeUseCase, jwtUseCase, redisRepo)
 	commentUseCase := usecases.NewCommentUsecase(repo.NewCommentRepository(pg, userUseCase), sessionUseCase)
 	subscribeUseCase := usecases.NewSubscribeUsecase(repo.NewSubscribeRepository(pg), sessionUseCase, rabbitmqrepo.NewSubscribeRabbitMQRepository(rmq))
 	recipeUseCase := usecases.NewRecipeUsecase(repo.NewRecipeRepository(pg), userUseCase, likeUseCase, sessionUseCase,
-		s3, commentUseCase, subscribeUseCase, redisrepo.NewRedisRepository(redis))
+		s3, commentUseCase, subscribeUseCase, redisRepo)
 
 	// HTTP Server
 	handler := gin.New()
