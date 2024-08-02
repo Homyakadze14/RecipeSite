@@ -63,6 +63,10 @@ func (s *S3Storage) Remove(path string) error {
 
 	if strings.Contains(path, ";") {
 		for _, v := range strings.Split(path, ";") {
+			if v == "" {
+				continue
+			}
+
 			_, err := s.DeleteObject(&s3.DeleteObjectInput{
 				Bucket: s.bucket,
 				Key:    aws.String(getFileName(v)),

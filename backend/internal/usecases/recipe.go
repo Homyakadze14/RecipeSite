@@ -57,8 +57,8 @@ type fileStorageForRecipe interface {
 }
 
 type redisRecipeRepository interface {
-	Set(ctx context.Context, key string, recipe entities.FullRecipe) error
-	Get(ctx context.Context, key string) (recipe entities.FullRecipe, err error)
+	Set(ctx context.Context, key string, value interface{}) error
+	Get(ctx context.Context, key string, dest interface{}) error
 	Del(ctx context.Context, key string) (res int64, err error)
 }
 
@@ -107,52 +107,54 @@ func (r *RecipeUseCases) GetFiltered(ctx context.Context, filter *entities.Recip
 }
 
 func (r *RecipeUseCases) Get(ctx context.Context, req *http.Request, recipeID int) (*entities.FullRecipe, error) {
+	fullRecipe := entities.FullRecipe{}
+
 	// Get recipe from redis
 	redisKey := fmt.Sprintf("recipe:%v", recipeID)
-	fullRecipe, err := r.redisRecipeRepository.Get(ctx, redisKey)
+	recipe := &entities.Recipe{}
+	err := r.redisRecipeRepository.Get(ctx, redisKey, recipe)
 	if err != nil {
-		fullRecipe = entities.FullRecipe{}
 		if errors.Is(err, redisrepo.ErrRedisKeyNotFound) {
-			// Get recipe
-			recipe, err := r.storage.Get(ctx, recipeID)
+			// Get recipe from db
+			recipe, err = r.storage.Get(ctx, recipeID)
 			if err != nil {
 				if errors.Is(err, ErrRecipeNotFound) {
 					return nil, ErrRecipeNotFound
 				}
 				return nil, fmt.Errorf("RecipeUseCase - Get - r.storage.Get: %w", err)
 			}
-			fullRecipe.Recipe = recipe
-
-			// Get Author
-			author, err := r.userUseCase.GetAuthor(ctx, recipe.UserID)
-			if err != nil {
-				if errors.Is(err, ErrUserNotFound) {
-					return nil, ErrUserNotFound
-				}
-				return nil, fmt.Errorf("RecipeUseCase - Get - r.userUseCase.GetAuthor: %w", err)
-			}
-			fullRecipe.Author = author
-
-			// Get likes count
-			fullRecipe.LikesCount, err = r.likeUseCase.LikesCount(ctx, recipe.ID)
-			if err != nil {
-				return nil, fmt.Errorf("RecipeUseCase - Get - r.likeUseCase.LikesCount: %w", err)
-			}
-
-			// Get comments
-			fullRecipe.Comments, err = r.commentUseCase.GetAll(ctx, recipe.ID)
-			if err != nil {
-				return nil, fmt.Errorf("RecipeUseCase - Get - r.commentUseCase.GetCommets: %w", err)
-			}
 
 			// Save to redis
-			err = r.redisRecipeRepository.Set(ctx, redisKey, fullRecipe)
+			err = r.redisRecipeRepository.Set(ctx, redisKey, recipe)
 			if err != nil {
 				return nil, fmt.Errorf("RecipeUseCase - Get - r.redisRecipeRepository.Set: %w", err)
 			}
 		} else {
 			return nil, fmt.Errorf("RecipeUseCase - Get - r.redisRecipeRepository.Get: %w", err)
 		}
+	}
+	fullRecipe.Recipe = recipe
+
+	// Get Author
+	author, err := r.userUseCase.GetAuthor(ctx, recipe.UserID)
+	if err != nil {
+		if errors.Is(err, ErrUserNotFound) {
+			return nil, ErrUserNotFound
+		}
+		return nil, fmt.Errorf("RecipeUseCase - Get - r.userUseCase.GetAuthor: %w", err)
+	}
+	fullRecipe.Author = author
+
+	// Get likes count
+	fullRecipe.LikesCount, err = r.likeUseCase.LikesCount(ctx, recipe.ID)
+	if err != nil {
+		return nil, fmt.Errorf("RecipeUseCase - Get - r.likeUseCase.LikesCount: %w", err)
+	}
+
+	// Get comments
+	fullRecipe.Comments, err = r.commentUseCase.GetAll(ctx, recipe.ID)
+	if err != nil {
+		return nil, fmt.Errorf("RecipeUseCase - Get - r.commentUseCase.GetCommets: %w", err)
 	}
 
 	// Get session
@@ -285,30 +287,40 @@ func (r *RecipeUseCases) Update(gc *gin.Context, userLogin string, recipeID int,
 		return ErrUserNoPermisions
 	}
 
-	// Get recipe
-	dbRecipe, err := r.storage.Get(ctx, recipeID)
+	// Get recipe from redis
+	redisKey := fmt.Sprintf("recipe:%v", recipeID)
+	recipe := &entities.Recipe{}
+	err = r.redisRecipeRepository.Get(ctx, redisKey, recipe)
 	if err != nil {
-		if errors.Is(err, ErrRecipeNotFound) {
-			return ErrRecipeNotFound
+		if errors.Is(err, redisrepo.ErrRedisKeyNotFound) {
+			// Get recipe from db
+			recipe, err = r.storage.Get(ctx, recipeID)
+			if err != nil {
+				if errors.Is(err, ErrRecipeNotFound) {
+					return ErrRecipeNotFound
+				}
+				return fmt.Errorf("RecipeUseCase - Update - r.storage.Get: %w", err)
+			}
+		} else {
+			return fmt.Errorf("RecipeUseCase - Update - r.redisRecipeRepository.Get: %w", err)
 		}
-		return fmt.Errorf("RecipeUseCase - Update - r.storage.Get: %w", err)
 	}
 
 	// Change values if they was update
 	if updatedRecipe.Complexitiy != 0 {
-		dbRecipe.Complexitiy = updatedRecipe.Complexitiy
+		recipe.Complexitiy = updatedRecipe.Complexitiy
 	}
 	if updatedRecipe.Title != "" {
-		dbRecipe.Title = updatedRecipe.Title
+		recipe.Title = updatedRecipe.Title
 	}
 	if updatedRecipe.About != "" {
-		dbRecipe.About = updatedRecipe.About
+		recipe.About = updatedRecipe.About
 	}
 	if updatedRecipe.NeedTime != "" {
-		dbRecipe.NeedTime = updatedRecipe.NeedTime
+		recipe.NeedTime = updatedRecipe.NeedTime
 	}
 	if updatedRecipe.Ingridients != "" {
-		dbRecipe.Ingridients = updatedRecipe.Ingridients
+		recipe.Ingridients = updatedRecipe.Ingridients
 	}
 
 	// Parse photos if exist and save
@@ -320,7 +332,8 @@ func (r *RecipeUseCases) Update(gc *gin.Context, userLogin string, recipeID int,
 	oldPhotos := ""
 
 	if len(files) != 0 {
-		oldPhotos = dbRecipe.PhotosUrls
+		oldPhotos = recipe.PhotosUrls
+		recipe.PhotosUrls = ""
 		for _, fileHeader := range files {
 			if !strings.Contains(fileHeader.Header.Get("Content-Type"), "image") {
 				return ErrUserNotImage
@@ -337,23 +350,23 @@ func (r *RecipeUseCases) Update(gc *gin.Context, userLogin string, recipeID int,
 			if err != nil {
 				return fmt.Errorf("RecipeUseCase - Update - u.fileStorage.Save: %w", err)
 			}
-			dbRecipe.PhotosUrls += url + ";"
+			recipe.PhotosUrls += url + ";"
 		}
 	}
 
 	// Update recipe in storage
-	err = r.storage.Update(ctx, dbRecipe)
+	err = r.storage.Update(ctx, recipe)
 	if err != nil {
-		errImage := r.fileStorage.Remove(dbRecipe.PhotosUrls)
+		errImage := r.fileStorage.Remove(recipe.PhotosUrls)
 		if errImage != nil {
-			return fmt.Errorf("RecipeUseCase - Update - r.fileStorage.Remove: %w", errImage)
+			return fmt.Errorf("RecipeUseCase - Update - r.storage.Update: %w; RecipeUseCase - Update - r.fileStorage.Remove: %w", err, errImage)
 		}
 
 		return fmt.Errorf("RecipeUseCase - Update - r.storage.Update: %w", err)
 	}
 
 	// Delete recipe from redis
-	_, err = r.redisRecipeRepository.Del(ctx, fmt.Sprintf("recipe:%v", dbRecipe.ID))
+	_, err = r.redisRecipeRepository.Del(ctx, fmt.Sprintf("recipe:%v", recipe.ID))
 	if err != nil {
 		return fmt.Errorf("RecipeUseCase - Update - r.redisRecipeRepository.Del: %w", err)
 	}
@@ -393,25 +406,35 @@ func (r *RecipeUseCases) Delete(gc *gin.Context, userLogin string, id int) error
 		return ErrUserNoPermisions
 	}
 
-	// Get recipe
-	recipe, err := r.storage.Get(ctx, id)
+	// Get recipe from redis
+	redisKey := fmt.Sprintf("recipe:%v", id)
+	recipe := &entities.Recipe{}
+	err = r.redisRecipeRepository.Get(ctx, redisKey, recipe)
 	if err != nil {
-		if errors.Is(err, ErrRecipeNotFound) {
-			return ErrRecipeNotFound
+		if errors.Is(err, redisrepo.ErrRedisKeyNotFound) {
+			// Get recipe from db
+			recipe, err = r.storage.Get(ctx, id)
+			if err != nil {
+				if errors.Is(err, ErrRecipeNotFound) {
+					return ErrRecipeNotFound
+				}
+				return fmt.Errorf("RecipeUseCase - Delete - r.storage.Get: %w", err)
+			}
+		} else {
+			return fmt.Errorf("RecipeUseCase - Delete - r.redisRecipeRepository.Get: %w", err)
 		}
-		return fmt.Errorf("RecipeUseCase - Delete - r.storage.Get: %w", err)
-	}
-
-	// Delete recipe from redis
-	_, err = r.redisRecipeRepository.Del(ctx, fmt.Sprintf("recipe:%v", recipe.ID))
-	if err != nil {
-		return fmt.Errorf("RecipeUseCase - Delete - r.redisRecipeRepository.Del: %w", err)
 	}
 
 	// Delete recipe
 	err = r.storage.Delete(ctx, recipe)
 	if err != nil {
 		return fmt.Errorf("RecipeUseCase - Delete - r.storage.Delete: %w", err)
+	}
+
+	// Delete recipe from redis
+	_, err = r.redisRecipeRepository.Del(ctx, fmt.Sprintf("recipe:%v", recipe.ID))
+	if err != nil {
+		return fmt.Errorf("RecipeUseCase - Delete - r.redisRecipeRepository.Del: %w", err)
 	}
 
 	return nil

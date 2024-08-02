@@ -1,13 +1,12 @@
 package entities
 
 import (
-	"encoding/json"
 	"time"
 )
 
 type Recipe struct {
 	ID          int       `json:"id"`
-	UserID      int       `json:"-"`
+	UserID      int       `json:"creator_user_id"`
 	Title       string    `json:"title" binding:"required,min=3,max=50"`
 	About       string    `json:"about" binding:"required,max=2500"`
 	Complexitiy int       `json:"complexitiy" binding:"required,min=1,max=3"  enums:"1,2,3"`
@@ -44,14 +43,6 @@ type FullRecipe struct {
 	LikesCount int       `json:"likes_count"`
 	IsLiked    bool      `json:"is_liked"`
 	Comments   []Comment `json:"comments"`
-}
-
-func (r FullRecipe) MarshalBinary() ([]byte, error) {
-	return json.Marshal(r)
-}
-
-func (r *FullRecipe) UnmarshalBinary(data []byte) error {
-	return json.Unmarshal(data, &r)
 }
 
 type RecipeFilter struct {

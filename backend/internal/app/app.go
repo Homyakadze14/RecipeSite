@@ -65,7 +65,7 @@ func Run(cfg *config.Config) {
 	commentUseCase := usecases.NewCommentUsecase(repo.NewCommentRepository(pg, userUseCase), sessionUseCase)
 	subscribeUseCase := usecases.NewSubscribeUsecase(repo.NewSubscribeRepository(pg), sessionUseCase, rabbitmqrepo.NewSubscribeRabbitMQRepository(rmq))
 	recipeUseCase := usecases.NewRecipeUsecase(repo.NewRecipeRepository(pg), userUseCase, likeUseCase, sessionUseCase,
-		s3, commentUseCase, subscribeUseCase, redisrepo.NewRecipeRedisRepository(redis))
+		s3, commentUseCase, subscribeUseCase, redisrepo.NewRedisRepository(redis))
 
 	// HTTP Server
 	handler := gin.New()
