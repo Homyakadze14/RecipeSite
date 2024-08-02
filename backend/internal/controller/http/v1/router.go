@@ -6,6 +6,7 @@ import (
 
 	_ "github.com/Homyakadze14/RecipeSite/docs"
 	"github.com/Homyakadze14/RecipeSite/internal/usecases"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	swaggerFiles "github.com/swaggo/files"
@@ -29,6 +30,7 @@ func NewRouter(handler *gin.Engine,
 	// Options
 	handler.Use(gin.Logger())
 	handler.Use(gin.Recovery())
+	handler.Use(cors.Default())
 
 	// Swagger
 	swaggerHandler := ginSwagger.DisablingWrapHandler(swaggerFiles.Handler, "DISABLE_SWAGGER_HTTP_HANDLER")
