@@ -12,6 +12,7 @@ import (
 	v1 "github.com/Homyakadze14/RecipeSite/internal/controller/http/v1"
 	"github.com/Homyakadze14/RecipeSite/internal/filestorage"
 	repo "github.com/Homyakadze14/RecipeSite/internal/repository/postgres"
+	rabbitmqrepo "github.com/Homyakadze14/RecipeSite/internal/repository/rabbitmq"
 	redisrepo "github.com/Homyakadze14/RecipeSite/internal/repository/redis"
 	"github.com/Homyakadze14/RecipeSite/internal/usecases"
 	"github.com/Homyakadze14/RecipeSite/pkg/httpserver"
@@ -62,9 +63,9 @@ func Run(cfg *config.Config) {
 	jwtUseCase := usecases.NewJWTUsecase([]byte(cfg.JWT.SECRET_KEY))
 	userUseCase := usecases.NewUserUsecase(repo.NewUserRepository(pg), sessionUseCase, cfg.DEFAULT_ICON_URL, s3, likeUseCase, jwtUseCase)
 	commentUseCase := usecases.NewCommentUsecase(repo.NewCommentRepository(pg, userUseCase), sessionUseCase)
-	subscribeUseCase := usecases.NewSubscribeUsecase(repo.NewSubscribeRepository(pg), sessionUseCase, rmq)
-	recipeUseCase := usecases.NewRecipeUsecase(repo.NewRecipeRepository(pg), userUseCase, likeUseCase, sessionUseCase, 
-	s3, commentUseCase, subscribeUseCase, redisrepo.NewRecipeRedisRepository(redis))
+	subscribeUseCase := usecases.NewSubscribeUsecase(repo.NewSubscribeRepository(pg), sessionUseCase, rabbitmqrepo.NewSubscribeRabbitMQRepository(rmq))
+	recipeUseCase := usecases.NewRecipeUsecase(repo.NewRecipeRepository(pg), userUseCase, likeUseCase, sessionUseCase,
+		s3, commentUseCase, subscribeUseCase, redisrepo.NewRecipeRedisRepository(redis))
 
 	// HTTP Server
 	handler := gin.New()
