@@ -59,6 +59,7 @@ type fileStorageForRecipe interface {
 type redisRecipeRepository interface {
 	Set(ctx context.Context, key string, recipe entities.FullRecipe) error
 	Get(ctx context.Context, key string) (recipe entities.FullRecipe, err error)
+	Del(ctx context.Context, key string) (res int64, err error)
 }
 
 type RecipeUseCases struct {
@@ -351,6 +352,12 @@ func (r *RecipeUseCases) Update(gc *gin.Context, userLogin string, recipeID int,
 		return fmt.Errorf("RecipeUseCase - Update - r.storage.Update: %w", err)
 	}
 
+	// Delete recipe from redis
+	_, err = r.redisRecipeRepository.Del(ctx, fmt.Sprintf("recipe:%v", dbRecipe.ID))
+	if err != nil {
+		return fmt.Errorf("RecipeUseCase - Update - r.redisRecipeRepository.Del: %w", err)
+	}
+
 	// Delete old photos
 	if oldPhotos != "" {
 		err = r.fileStorage.Remove(oldPhotos)
@@ -393,6 +400,12 @@ func (r *RecipeUseCases) Delete(gc *gin.Context, userLogin string, id int) error
 			return ErrRecipeNotFound
 		}
 		return fmt.Errorf("RecipeUseCase - Delete - r.storage.Get: %w", err)
+	}
+
+	// Delete recipe from redis
+	_, err = r.redisRecipeRepository.Del(ctx, fmt.Sprintf("recipe:%v", recipe.ID))
+	if err != nil {
+		return fmt.Errorf("RecipeUseCase - Delete - r.redisRecipeRepository.Del: %w", err)
 	}
 
 	// Delete recipe

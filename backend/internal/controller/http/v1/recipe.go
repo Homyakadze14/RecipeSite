@@ -319,13 +319,6 @@ func (r *recipeRoutes) update(c *gin.Context) {
 // @Failure     500
 // @Router      /user/{login}/recipe/{id} [delete]
 func (r *recipeRoutes) delete(c *gin.Context) {
-	contentType := c.Request.Header.Get("Content-Type")
-	if !strings.Contains(contentType, "multipart/form-data") {
-		slog.Error(ErrContentType.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": ErrContentType.Error()})
-		return
-	}
-
 	// Get user login
 	login, ok := c.Params.Get("login")
 	if !ok {

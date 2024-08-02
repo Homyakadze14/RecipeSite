@@ -48,3 +48,16 @@ func (r *RecipeRedisRepo) Get(ctx context.Context, key string) (recipe entities.
 
 	return recipe, nil
 }
+
+func (r *RecipeRedisRepo) Del(ctx context.Context, key string) (res int64, err error) {
+	res, err = r.redis.Del(ctx, key).Result()
+
+	if err != nil {
+		if err == redis.Nil {
+			return res, ErrRedisKeyNotFound
+		}
+		return res, fmt.Errorf("RecipeRedisRepo - Del - r.redis.Del: %w", err)
+	}
+
+	return res, nil
+}
