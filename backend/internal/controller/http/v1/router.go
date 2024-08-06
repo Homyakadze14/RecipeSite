@@ -19,7 +19,7 @@ import (
 // @description RestAPI for recipe site
 // @version     1.0
 // @host        localhost:8080
-// @BasePath    /v1
+// @BasePath    /api/v1
 func NewRouter(handler *gin.Engine,
 	sess *usecases.SessionUseCase,
 	user *usecases.UserUseCases,
@@ -43,7 +43,7 @@ func NewRouter(handler *gin.Engine,
 	handler.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	// Routers
-	h := handler.Group("/v1")
+	h := handler.Group("/api/v1")
 	{
 		NewUserRoutes(h, user, sess)
 		NewLikeRoutes(h, like, sess)

@@ -32,10 +32,10 @@ services:
       - REDIS_PASSWORD=redispassword
       - REDIS_PORT=6379
 
-  app:
+  backend:
     build: ./backend
-    container_name: app
-    image: app
+    container_name: backend
+    image: backend
     restart: always
     env_file: backend/.env
     environment:
@@ -62,7 +62,17 @@ services:
       DB_URL: 'postgresql://user:pass@postgres:5432/postgres'
       RMQ_URL: 'amqp://guest:guest@rabbitmq:5672/'
     depends_on:
-      - app
+      - backend
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 80:80
+    depends_on:
+      - backend
 
 volumes:
   pg-data:

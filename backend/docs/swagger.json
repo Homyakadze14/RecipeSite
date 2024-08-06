@@ -7,7 +7,7 @@
         "version": "1.0"
     },
     "host": "localhost:8080",
-    "basePath": "/v1",
+    "basePath": "/api/v1",
     "paths": {
         "/auth/checktgtoken": {
             "post": {
@@ -1004,6 +1004,9 @@
                 },
                 "created_at": {
                     "type": "string"
+                },
+                "creator_user_id": {
+                    "type": "integer"
                 },
                 "id": {
                     "type": "integer"
