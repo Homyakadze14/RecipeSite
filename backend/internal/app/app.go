@@ -59,13 +59,21 @@ func Run(cfg *config.Config) {
 
 	redisRepo := redisrepo.NewRedisRepository(redis)
 
+	// Rabbit repository
+	rmqRepo, err := rabbitmqrepo.NewSubscribeRabbitMQRepository(rmq)
+	if err != nil {
+		slog.Error(fmt.Errorf("app - Run - rabbitmqrepo.NewSubscribeRabbitMQRepository: %w", err).Error())
+		os.Exit(1)
+	}
+	defer rmqRepo.CloseChan()
+
 	// Use cases
 	sessionUseCase := usecases.NewSessionUseCase(repo.NewSessionRepository(pg))
 	likeUseCase := usecases.NewLikeUsecase(repo.NewLikeRepository(pg), sessionUseCase)
 	jwtUseCase := usecases.NewJWTUsecase([]byte(cfg.JWT.SECRET_KEY))
 	userUseCase := usecases.NewUserUsecase(repo.NewUserRepository(pg), sessionUseCase, cfg.DEFAULT_ICON_URL, s3, likeUseCase, jwtUseCase, redisRepo)
 	commentUseCase := usecases.NewCommentUsecase(repo.NewCommentRepository(pg, userUseCase), sessionUseCase)
-	subscribeUseCase := usecases.NewSubscribeUsecase(repo.NewSubscribeRepository(pg), sessionUseCase, rabbitmqrepo.NewSubscribeRabbitMQRepository(rmq))
+	subscribeUseCase := usecases.NewSubscribeUsecase(repo.NewSubscribeRepository(pg), sessionUseCase, rmqRepo)
 	recipeUseCase := usecases.NewRecipeUsecase(repo.NewRecipeRepository(pg), userUseCase, likeUseCase, sessionUseCase,
 		s3, commentUseCase, subscribeUseCase, redisRepo)
 

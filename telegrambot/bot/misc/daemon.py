@@ -52,6 +52,8 @@ async def run(bot, loop):
         logger.error(f"Can't connect to rabbit")
         os._exit(1)
 
+    logger.info(f"Connect to rabbit")
+
     async with connection:
         queue_name = "new_recipe"
 
@@ -68,5 +70,7 @@ async def run(bot, loop):
 
                     if queue.name in message.body.decode():
                         break
+                    
+                    logger.info(f"Get message")
 
                     await send_messages(bot, msg)
