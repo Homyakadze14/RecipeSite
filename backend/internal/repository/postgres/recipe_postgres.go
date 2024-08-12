@@ -11,7 +11,7 @@ import (
 	"github.com/Homyakadze14/RecipeSite/internal/entities"
 	"github.com/Homyakadze14/RecipeSite/internal/usecases"
 	"github.com/Homyakadze14/RecipeSite/pkg/postgres"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 )
 
 const (
