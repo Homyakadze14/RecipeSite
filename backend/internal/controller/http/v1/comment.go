@@ -14,12 +14,11 @@ import (
 
 type commentRoutes struct {
 	u  *usecases.CommentUseCase
-	us *usecases.UserUseCases
 	su *usecases.SessionUseCase
 }
 
-func NewCommentRoutes(handler *gin.RouterGroup, u *usecases.CommentUseCase, su *usecases.SessionUseCase, us *usecases.UserUseCases) {
-	r := &commentRoutes{u, us, su}
+func NewCommentRoutes(handler *gin.RouterGroup, u *usecases.CommentUseCase, su *usecases.SessionUseCase) {
+	r := &commentRoutes{u, su}
 
 	h := handler.Group("/recipe/:id/comment")
 	{
@@ -43,50 +42,43 @@ func NewCommentRoutes(handler *gin.RouterGroup, u *usecases.CommentUseCase, su *
 // @Failure     500
 // @Router      /recipe/{id}/comment [post]
 func (r *commentRoutes) create(c *gin.Context) {
-	// Get recipe id
-	strRecipeID, ok := c.Params.Get("id")
+	urlParam, ok := c.Params.Get("id")
 	if !ok {
-		errRecipeID := "ID must be provided"
-		slog.Error(errRecipeID)
-		c.JSON(http.StatusBadRequest, gin.H{"error": errRecipeID})
+		slog.Error(common.ErrUrlParam.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrUrlParam.Error()})
 		return
 	}
 
-	recipeID, err := strconv.Atoi(strRecipeID)
+	recipeID, err := strconv.Atoi(urlParam)
 	if err != nil {
-		errRecipeID := "ID must be integer"
-		slog.Error(errRecipeID)
-		c.JSON(http.StatusBadRequest, gin.H{"error": errRecipeID})
+		slog.Error(common.ErrRecipeIDType.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrRecipeIDType.Error()})
 		return
 	}
 
-	// Parse json values to comment
-	crComment := &entities.CommentCreate{}
-	if err := c.BindJSON(&crComment); err != nil {
+	response := &entities.CommentCreate{}
+	if err := c.BindJSON(&response); err != nil {
 		slog.Error(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": common.GetErrMessages(err).Error()})
 		return
 	}
 
-	comment := &entities.Comment{Text: crComment.Text}
+	comment := &entities.Comment{Text: response.Text}
 
-	// Get user id from session
 	sess, err := r.su.GetSession(c.Request)
 	if err != nil {
 		slog.Error(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 		return
 	}
-	comment.UserID = sess.UserID
 
-	// Set recipe id
+	comment.UserID = sess.UserID
 	comment.RecipeID = recipeID
 
-	// Save comment
 	err = r.u.Save(c.Request.Context(), comment)
 	if err != nil {
 		slog.Error(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 		return
 	}
 
@@ -106,7 +98,6 @@ func (r *commentRoutes) create(c *gin.Context) {
 // @Failure     500
 // @Router      /recipe/{id}/comment [put]
 func (r *commentRoutes) update(c *gin.Context) {
-	// Parse json values to comment
 	comment := &entities.CommentUpdate{}
 	if err := c.BindJSON(&comment); err != nil {
 		slog.Error(err.Error())
@@ -117,11 +108,10 @@ func (r *commentRoutes) update(c *gin.Context) {
 	sess, err := r.su.GetSession(c.Request)
 	if err != nil {
 		slog.Error(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 		return
 	}
 
-	// Update comment
 	err = r.u.Update(c.Request.Context(), comment, sess.UserID)
 	if err != nil {
 		slog.Error(err.Error())
@@ -133,7 +123,7 @@ func (r *commentRoutes) update(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrNoPermissions.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 		return
 	}
 
@@ -153,7 +143,6 @@ func (r *commentRoutes) update(c *gin.Context) {
 // @Failure     500
 // @Router      /recipe/{id}/comment [delete]
 func (r *commentRoutes) delete(c *gin.Context) {
-	// Parse json values to comment
 	comment := &entities.CommentDelete{}
 	if err := c.BindJSON(&comment); err != nil {
 		slog.Error(err.Error())
@@ -164,11 +153,10 @@ func (r *commentRoutes) delete(c *gin.Context) {
 	sess, err := r.su.GetSession(c.Request)
 	if err != nil {
 		slog.Error(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 		return
 	}
 
-	// Delete comment
 	err = r.u.Delete(c.Request.Context(), comment, sess.UserID)
 	if err != nil {
 		slog.Error(err.Error())
@@ -180,7 +168,7 @@ func (r *commentRoutes) delete(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrNoPermissions.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 		return
 	}
 

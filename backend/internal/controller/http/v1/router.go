@@ -48,7 +48,7 @@ func NewRouter(handler *gin.Engine,
 		NewUserRoutes(h, user, sess)
 		NewLikeRoutes(h, like, sess)
 		NewRecipeRoutes(h, recipe, sess)
-		NewCommentRoutes(h, comment, sess, user)
+		NewCommentRoutes(h, comment, sess)
 		NewSubscribeRoutes(h, subscribe, sess)
 	}
 }

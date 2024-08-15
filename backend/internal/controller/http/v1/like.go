@@ -28,11 +28,6 @@ func NewLikeRoutes(handler *gin.RouterGroup, u *usecases.LikeUseCase, su *usecas
 	}
 }
 
-var (
-	errUrlParam     = errors.New("ID must be provided")
-	errRecipeIDType = errors.New("ID must be integer")
-)
-
 // @Summary     Like
 // @Description Like recipe
 // @ID          like
@@ -46,15 +41,15 @@ var (
 func (r *likeRoutes) like(c *gin.Context) {
 	urlParam, ok := c.Params.Get("id")
 	if !ok {
-		slog.Error(errUrlParam.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": errUrlParam.Error()})
+		slog.Error(common.ErrUrlParam.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrUrlParam.Error()})
 		return
 	}
 
 	recipeID, err := strconv.Atoi(urlParam)
 	if err != nil {
-		slog.Error(errRecipeIDType.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": errRecipeIDType.Error()})
+		slog.Error(common.ErrRecipeIDType.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrRecipeIDType.Error()})
 		return
 	}
 
@@ -101,15 +96,15 @@ func (r *likeRoutes) like(c *gin.Context) {
 func (r *likeRoutes) unlike(c *gin.Context) {
 	urlParam, ok := c.Params.Get("id")
 	if !ok {
-		slog.Error(errUrlParam.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": errUrlParam.Error()})
+		slog.Error(common.ErrUrlParam.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrUrlParam.Error()})
 		return
 	}
 
 	recipeID, err := strconv.Atoi(urlParam)
 	if err != nil {
-		slog.Error(errRecipeIDType.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": errRecipeIDType.Error()})
+		slog.Error(common.ErrRecipeIDType.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrRecipeIDType.Error()})
 		return
 	}
 
