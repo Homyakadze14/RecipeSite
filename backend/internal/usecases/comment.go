@@ -88,8 +88,8 @@ func (u *CommentUseCase) GetAll(ctx context.Context, recipeID int) ([]entities.C
 		return nil, fmt.Errorf("CommentUseCase - GetAll - u.storage.GetAll: %w", err)
 	}
 
-	for _, comment := range comments {
-		comment.Author, err = u.userUseCase.GetAuthor(ctx, comment.UserID)
+	for i := range comments {
+		comments[i].Author, err = u.userUseCase.GetAuthor(ctx, comments[i].UserID)
 		if err != nil {
 			return nil, fmt.Errorf("CommentUseCase - GetAll - u.userUseCase.GetAuthor: %w", err)
 		}
