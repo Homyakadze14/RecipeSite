@@ -53,7 +53,7 @@ func (r *likeRoutes) like(c *gin.Context) {
 		return
 	}
 
-	sess, err := r.su.GetSession(c.Request)
+	sess, err := r.su.SessionFromContext(c)
 	if err != nil {
 		slog.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
@@ -108,7 +108,7 @@ func (r *likeRoutes) unlike(c *gin.Context) {
 		return
 	}
 
-	sess, err := r.su.GetSession(c.Request)
+	sess, err := r.su.SessionFromContext(c)
 	if err != nil {
 		slog.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
