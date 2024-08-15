@@ -73,11 +73,10 @@ type RecipeUseCases struct {
 	redisRecipeRepository redisRecipeRepository
 }
 
-func NewRecipeUsecase(st recipeStorage, us userUseCase, lu likeUseCase, sm sessionManagerForLike,
+func NewRecipeUsecase(st recipeStorage, us userUseCase, lu likeUseCase,
 	fs fileStorageForRecipe, cu commentUseCase, subu subscribeUseCase, redRep redisRecipeRepository) *RecipeUseCases {
 	return &RecipeUseCases{
 		storage:               st,
-		sessionManager:        sm,
 		userUseCase:           us,
 		likeUseCase:           lu,
 		fileStorage:           fs,

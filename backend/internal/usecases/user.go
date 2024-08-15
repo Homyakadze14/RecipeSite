@@ -37,10 +37,6 @@ type sessionManager interface {
 	DestroyAllSessions(ctx context.Context, userID int) error
 }
 
-type likeUsecases interface {
-	GetLikedRecipies(ctx context.Context, userID int) ([]entities.Recipe, error)
-}
-
 type jwtUseCase interface {
 	GenerateJWT(userID int) (*entities.JWTToken, error)
 	GetDataFromJWT(inToken *entities.JWTToken) (*entities.JWTData, error)
@@ -56,20 +52,18 @@ type UserUseCases struct {
 	storage        userStorage
 	fileStorage    fileStorage
 	sessionManager sessionManager
-	likeUseCases   likeUsecases
 	defaultIconUrl string
 	jwtUseCase     jwtUseCase
 	cache          cache
 }
 
 func NewUserUsecase(st userStorage, sm sessionManager, df string,
-	fs fileStorage, lu likeUsecases, jwt jwtUseCase, cache cache) *UserUseCases {
+	fs fileStorage, jwt jwtUseCase, cache cache) *UserUseCases {
 	return &UserUseCases{
 		storage:        st,
 		sessionManager: sm,
 		defaultIconUrl: df,
 		fileStorage:    fs,
-		likeUseCases:   lu,
 		jwtUseCase:     jwt,
 		cache:          cache,
 	}
@@ -383,11 +377,11 @@ func (u *UserUseCases) Get(gc *gin.Context, login string) (*entities.UserInfo, e
 		// Check who get user
 		if sess.UserID == userInfo.ID {
 			// Get liked recipes
-			likedRecipes, err := u.likeUseCases.GetLikedRecipies(r.Context(), userInfo.ID)
+			//likedRecipes, err := u.likeUseCases.GetLikedRecipies(r.Context(), userInfo.ID)
 			if err != nil {
 				return nil, fmt.Errorf("UserUseCase - Get - u.likeUseCases.GetLikedRecipies: %w", err)
 			}
-			userInfo.LikedRecipies = likedRecipes
+			//userInfo.LikedRecipies = likedRecipes
 		}
 	}
 

@@ -23,7 +23,7 @@ import (
 func NewRouter(handler *gin.Engine,
 	sess *usecases.SessionUseCase,
 	user *usecases.UserUseCases,
-	like *usecases.LikeUseCases,
+	like *usecases.LikeUseCase,
 	recipe *usecases.RecipeUseCases,
 	comment *usecases.CommentUseCase,
 	subscribe *usecases.SubscribeUseCases) {

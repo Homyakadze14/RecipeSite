@@ -6,16 +6,18 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/Homyakadze14/RecipeSite/internal/common"
+	"github.com/Homyakadze14/RecipeSite/internal/entities"
 	"github.com/Homyakadze14/RecipeSite/internal/usecases"
 	"github.com/gin-gonic/gin"
 )
 
 type likeRoutes struct {
-	u  *usecases.LikeUseCases
+	u  *usecases.LikeUseCase
 	su *usecases.SessionUseCase
 }
 
-func NewLikeRoutes(handler *gin.RouterGroup, u *usecases.LikeUseCases, su *usecases.SessionUseCase) {
+func NewLikeRoutes(handler *gin.RouterGroup, u *usecases.LikeUseCase, su *usecases.SessionUseCase) {
 	r := &likeRoutes{u, su}
 
 	h := handler.Group("/recipe/:id")
@@ -25,6 +27,11 @@ func NewLikeRoutes(handler *gin.RouterGroup, u *usecases.LikeUseCases, su *useca
 		h.POST("/unlike", r.unlike)
 	}
 }
+
+var (
+	errUrlParam     = errors.New("ID must be provided")
+	errRecipeIDType = errors.New("ID must be integer")
+)
 
 // @Summary     Like
 // @Description Like recipe
@@ -37,25 +44,33 @@ func NewLikeRoutes(handler *gin.RouterGroup, u *usecases.LikeUseCases, su *useca
 // @Failure     500
 // @Router      /recipe/{id}/like [post]
 func (r *likeRoutes) like(c *gin.Context) {
-	// Get recipe id
-	strRecipeID, ok := c.Params.Get("id")
+	urlParam, ok := c.Params.Get("id")
 	if !ok {
-		errRecipeID := "ID must be provided"
-		slog.Error(errRecipeID)
-		c.JSON(http.StatusBadRequest, gin.H{"error": errRecipeID})
+		slog.Error(errUrlParam.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": errUrlParam.Error()})
 		return
 	}
 
-	recipeID, err := strconv.Atoi(strRecipeID)
+	recipeID, err := strconv.Atoi(urlParam)
 	if err != nil {
-		errRecipeID := "ID must be integer"
-		slog.Error(errRecipeID)
-		c.JSON(http.StatusBadRequest, gin.H{"error": errRecipeID})
+		slog.Error(errRecipeIDType.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": errRecipeIDType.Error()})
 		return
 	}
 
-	// Like recipe
-	err = r.u.Like(c.Request.Context(), c.Request, recipeID)
+	sess, err := r.su.GetSession(c.Request)
+	if err != nil {
+		slog.Error(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
+		return
+	}
+
+	like := &entities.Like{
+		UserID:   sess.UserID,
+		RecipeID: recipeID,
+	}
+
+	err = r.u.Like(c.Request.Context(), like)
 	if err != nil {
 		slog.Error(err.Error())
 		if errors.Is(err, usecases.ErrAlreadyLike) {
@@ -66,7 +81,7 @@ func (r *likeRoutes) like(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrRecipeNotExist.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError})
 		return
 	}
 
@@ -84,25 +99,33 @@ func (r *likeRoutes) like(c *gin.Context) {
 // @Failure     500
 // @Router      /recipe/{id}/unlike [post]
 func (r *likeRoutes) unlike(c *gin.Context) {
-	// Get recipe id
-	strRecipeID, ok := c.Params.Get("id")
+	urlParam, ok := c.Params.Get("id")
 	if !ok {
-		errRecipeID := "ID must be provided"
-		slog.Error(errRecipeID)
-		c.JSON(http.StatusBadRequest, gin.H{"error": errRecipeID})
+		slog.Error(errUrlParam.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": errUrlParam.Error()})
 		return
 	}
 
-	recipeID, err := strconv.Atoi(strRecipeID)
+	recipeID, err := strconv.Atoi(urlParam)
 	if err != nil {
-		errRecipeID := "ID must be integer"
-		slog.Error(errRecipeID)
-		c.JSON(http.StatusBadRequest, gin.H{"error": errRecipeID})
+		slog.Error(errRecipeIDType.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": errRecipeIDType.Error()})
 		return
 	}
 
-	// Like recipe
-	err = r.u.Unlike(c.Request.Context(), c.Request, recipeID)
+	sess, err := r.su.GetSession(c.Request)
+	if err != nil {
+		slog.Error(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
+		return
+	}
+
+	like := &entities.Like{
+		UserID:   sess.UserID,
+		RecipeID: recipeID,
+	}
+
+	err = r.u.Unlike(c.Request.Context(), like)
 	if err != nil {
 		slog.Error(err.Error())
 		if errors.Is(err, usecases.ErrNotLikedYet) {
