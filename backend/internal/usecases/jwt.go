@@ -16,7 +16,7 @@ var (
 	ErrBadToken = errors.New("bad token")
 )
 
-func NewJWTUsecase(sk []byte) *JWTUseCase {
+func NewJWTUseCase(sk []byte) *JWTUseCase {
 	return &JWTUseCase{
 		secretKey: sk,
 	}
