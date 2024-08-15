@@ -197,8 +197,8 @@ func (r *recipeRoutes) create(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": usecases.ErrUserNotFound.Error()})
 			return
 		}
-		if errors.Is(err, usecases.ErrUserNoPermisions) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrUserNoPermisions.Error()})
+		if errors.Is(err, usecases.ErrNoPermissions) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrNoPermissions.Error()})
 			return
 		}
 		if errors.Is(err, usecases.ErrEmptyPhotos) {
@@ -292,8 +292,8 @@ func (r *recipeRoutes) update(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": usecases.ErrRecipeNotFound.Error()})
 			return
 		}
-		if errors.Is(err, usecases.ErrUserNoPermisions) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrUserNoPermisions.Error()})
+		if errors.Is(err, usecases.ErrNoPermissions) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrNoPermissions.Error()})
 			return
 		}
 		if errors.Is(err, usecases.ErrUserNotImage) {
@@ -357,8 +357,8 @@ func (r *recipeRoutes) delete(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": usecases.ErrRecipeNotFound.Error()})
 			return
 		}
-		if errors.Is(err, usecases.ErrUserNoPermisions) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrUserNoPermisions.Error()})
+		if errors.Is(err, usecases.ErrNoPermissions) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrNoPermissions.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})

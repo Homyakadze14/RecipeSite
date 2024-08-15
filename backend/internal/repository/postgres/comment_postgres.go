@@ -14,11 +14,10 @@ import (
 
 type CommentRepo struct {
 	*postgres.Postgres
-	us *usecases.UserUseCases
 }
 
-func NewCommentRepository(pg *postgres.Postgres, us *usecases.UserUseCases) *CommentRepo {
-	return &CommentRepo{pg, us}
+func NewCommentRepository(pg *postgres.Postgres) *CommentRepo {
+	return &CommentRepo{pg}
 }
 
 func (r *CommentRepo) Save(ctx context.Context, cm *entities.Comment) error {
@@ -60,10 +59,6 @@ func (r *CommentRepo) GetByID(ctx context.Context, id int) (*entities.Comment, e
 		}
 		return nil, fmt.Errorf("CommentRepo - GetByID -  row.Scan: %w", err)
 	}
-	comment.Author, err = r.us.GetAuthor(ctx, comment.UserID)
-	if err != nil {
-		return nil, fmt.Errorf("CommentRepo - GetByID - r.us.GetAuthor: %w", err)
-	}
 
 	return comment, nil
 }
@@ -71,7 +66,7 @@ func (r *CommentRepo) GetByID(ctx context.Context, id int) (*entities.Comment, e
 func (r *CommentRepo) GetAll(ctx context.Context, recipeID int) ([]entities.Comment, error) {
 	rows, err := r.Pool.Query(ctx, "SELECT * FROM comments WHERE recipe_id=$1", recipeID)
 	if err != nil {
-		return nil, fmt.Errorf("CommentRepo - GetCommets - r.Pool.Query: %w", err)
+		return nil, fmt.Errorf("CommentRepo - GetAll - r.Pool.Query: %w", err)
 	}
 
 	comments := make([]entities.Comment, 0, constArraySize)
@@ -79,11 +74,7 @@ func (r *CommentRepo) GetAll(ctx context.Context, recipeID int) ([]entities.Comm
 		comment := entities.Comment{}
 		err = rows.Scan(&comment.ID, &comment.UserID, &comment.RecipeID, &comment.Text, &comment.CreatedAt, &comment.UpdatedAt)
 		if err != nil {
-			return nil, fmt.Errorf("CommentRepo - GetCommets - rows.Scan: %w", err)
-		}
-		comment.Author, err = r.us.GetAuthor(ctx, comment.UserID)
-		if err != nil {
-			return nil, fmt.Errorf("CommentRepo - GetCommets - r.us.GetAuthor: %w", err)
+			return nil, fmt.Errorf("CommentRepo - GetAll - rows.Scan: %w", err)
 		}
 		comments = append(comments, comment)
 	}

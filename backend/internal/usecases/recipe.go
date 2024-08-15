@@ -195,7 +195,7 @@ func (r *RecipeUseCases) Create(gc *gin.Context, userLogin string, crRecipe *ent
 
 	// Check who create recipe
 	if sess.UserID != dbUser.ID {
-		return ErrUserNoPermisions
+		return ErrNoPermissions
 	}
 
 	recipe := &entities.Recipe{
@@ -284,7 +284,7 @@ func (r *RecipeUseCases) Update(gc *gin.Context, userLogin string, recipeID int,
 
 	// Check who create recipe
 	if sess.UserID != dbUser.ID {
-		return ErrUserNoPermisions
+		return ErrNoPermissions
 	}
 
 	// Get recipe from redis
@@ -403,7 +403,7 @@ func (r *RecipeUseCases) Delete(gc *gin.Context, userLogin string, id int) error
 
 	// Check who create recipe
 	if sess.UserID != dbUser.ID {
-		return ErrUserNoPermisions
+		return ErrNoPermissions
 	}
 
 	// Get recipe from redis

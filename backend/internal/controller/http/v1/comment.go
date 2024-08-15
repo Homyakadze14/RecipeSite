@@ -13,12 +13,12 @@ import (
 )
 
 type commentRoutes struct {
-	u  *usecases.CommentUseCases
+	u  *usecases.CommentUseCase
 	us *usecases.UserUseCases
 	su *usecases.SessionUseCase
 }
 
-func NewCommentRoutes(handler *gin.RouterGroup, u *usecases.CommentUseCases, su *usecases.SessionUseCase, us *usecases.UserUseCases) {
+func NewCommentRoutes(handler *gin.RouterGroup, u *usecases.CommentUseCase, su *usecases.SessionUseCase, us *usecases.UserUseCases) {
 	r := &commentRoutes{u, us, su}
 
 	h := handler.Group("/recipe/:id/comment")
@@ -114,16 +114,23 @@ func (r *commentRoutes) update(c *gin.Context) {
 		return
 	}
 
+	sess, err := r.su.GetSession(c.Request)
+	if err != nil {
+		slog.Error(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		return
+	}
+
 	// Update comment
-	err := r.u.Update(c.Request.Context(), c.Request, comment)
+	err = r.u.Update(c.Request.Context(), comment, sess.UserID)
 	if err != nil {
 		slog.Error(err.Error())
 		if errors.Is(err, usecases.ErrCommentNotFound) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrCommentNotFound.Error()})
 			return
 		}
-		if errors.Is(err, usecases.ErrUserNoPermisions) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrUserNoPermisions.Error()})
+		if errors.Is(err, usecases.ErrNoPermissions) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrNoPermissions.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
@@ -154,16 +161,23 @@ func (r *commentRoutes) delete(c *gin.Context) {
 		return
 	}
 
+	sess, err := r.su.GetSession(c.Request)
+	if err != nil {
+		slog.Error(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		return
+	}
+
 	// Delete comment
-	err := r.u.Delete(c.Request.Context(), c.Request, comment)
+	err = r.u.Delete(c.Request.Context(), comment, sess.UserID)
 	if err != nil {
 		slog.Error(err.Error())
 		if errors.Is(err, usecases.ErrCommentNotFound) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrCommentNotFound.Error()})
 			return
 		}
-		if errors.Is(err, usecases.ErrUserNoPermisions) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrUserNoPermisions.Error()})
+		if errors.Is(err, usecases.ErrNoPermissions) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrNoPermissions.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})

@@ -25,7 +25,7 @@ func NewRouter(handler *gin.Engine,
 	user *usecases.UserUseCases,
 	like *usecases.LikeUseCases,
 	recipe *usecases.RecipeUseCases,
-	comment *usecases.CommentUseCases,
+	comment *usecases.CommentUseCase,
 	subscribe *usecases.SubscribeUseCases) {
 	// Options
 	handler.Use(gin.Logger())

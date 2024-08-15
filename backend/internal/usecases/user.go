@@ -79,7 +79,7 @@ var (
 	ErrUserUnique        = errors.New("user with this credentials already exists")
 	ErrUserNotFound      = errors.New("user not found")
 	ErrUserWrongPassword = errors.New("wrong password")
-	ErrUserNoPermisions  = errors.New("no permissions")
+	ErrNoPermissions     = errors.New("no permissions")
 	ErrUserNotImage      = errors.New("icon must be image")
 )
 
@@ -251,7 +251,7 @@ func (u *UserUseCases) Update(gc *gin.Context, login string, user *entities.User
 
 	// Check who update user
 	if sess.UserID != dbUser.ID {
-		return "", ErrUserNoPermisions
+		return "", ErrNoPermissions
 	}
 
 	// Icon
@@ -332,7 +332,7 @@ func (u *UserUseCases) UpdatePassword(ctx context.Context, login string, user *e
 
 	// Check who update user
 	if sess.UserID != dbUser.ID {
-		return ErrUserNoPermisions
+		return ErrNoPermissions
 	}
 
 	// Hash password

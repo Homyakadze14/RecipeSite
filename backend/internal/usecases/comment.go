@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 
+	"github.com/Homyakadze14/RecipeSite/internal/common"
 	"github.com/Homyakadze14/RecipeSite/internal/entities"
 )
 
@@ -21,85 +21,78 @@ type commentStorage interface {
 	GetByID(ctx context.Context, id int) (*entities.Comment, error)
 }
 
-type CommentUseCases struct {
-	storage        commentStorage
-	sessionManager sessionManagerForLike
+type userUseCaseForComment interface {
+	GetAuthor(ctx context.Context, id int) (*entities.Author, error)
 }
 
-func NewCommentUsecase(st commentStorage, sm sessionManagerForLike) *CommentUseCases {
-	return &CommentUseCases{
-		storage:        st,
-		sessionManager: sm,
+type CommentUseCase struct {
+	storage     commentStorage
+	userUseCase userUseCaseForComment
+}
+
+func NewCommentUseCase(st commentStorage, us userUseCaseForComment) *CommentUseCase {
+	return &CommentUseCase{
+		storage:     st,
+		userUseCase: us,
 	}
 }
 
-func (u *CommentUseCases) Save(ctx context.Context, cm *entities.Comment) error {
+func (u *CommentUseCase) Save(ctx context.Context, cm *entities.Comment) error {
 	err := u.storage.Save(ctx, cm)
 	if err != nil {
-		return fmt.Errorf("CommentUseCases - Save - u.storage.Save: %w", err)
+		return fmt.Errorf("CommentUseCase - Save - u.storage.Save: %w", err)
 	}
 
 	return nil
 }
 
-func (u *CommentUseCases) Update(ctx context.Context, r *http.Request, cm *entities.CommentUpdate) error {
-	// Get session
-	sess, err := u.sessionManager.GetSession(r)
-	if err != nil {
-		return fmt.Errorf("RecipeUseCase - Update - r.sessionManager.GetSession: %w", err)
-	}
-
-	// Get db comment
+func (u *CommentUseCase) Update(ctx context.Context, cm *entities.CommentUpdate, ownerID int) error {
 	comment, err := u.storage.GetByID(ctx, cm.ID)
 	if err != nil {
-		return fmt.Errorf("RecipeUseCase - Update - u.storage.GetByID: %w", err)
+		return fmt.Errorf("CommentUseCase - Update - u.storage.GetByID: %w", err)
 	}
 
-	// Check who update comment
-	if sess.UserID != comment.UserID {
-		return ErrUserNoPermisions
+	if !common.HavePermisson(ownerID, comment.UserID) {
+		return ErrNoPermissions
 	}
 
-	// Update
 	err = u.storage.Update(ctx, cm)
 	if err != nil {
-		return fmt.Errorf("CommentUseCases - Update - u.storage.Update: %w", err)
+		return fmt.Errorf("CommentUseCase - Update - u.storage.Update: %w", err)
 	}
 
 	return nil
 }
 
-func (u *CommentUseCases) Delete(ctx context.Context, r *http.Request, cm *entities.CommentDelete) error {
-	// Get session
-	sess, err := u.sessionManager.GetSession(r)
-	if err != nil {
-		return fmt.Errorf("RecipeUseCase - Delete - r.sessionManager.GetSession: %w", err)
-	}
-
-	// Get db comment
+func (u *CommentUseCase) Delete(ctx context.Context, cm *entities.CommentDelete, ownerID int) error {
 	comment, err := u.storage.GetByID(ctx, cm.ID)
 	if err != nil {
-		return fmt.Errorf("RecipeUseCase - Delete - u.storage.GetByID: %w", err)
+		return fmt.Errorf("CommentUseCase - Delete - u.storage.GetByID: %w", err)
 	}
 
-	// Check who delete comment
-	if sess.UserID != comment.UserID {
-		return ErrUserNoPermisions
+	if !common.HavePermisson(ownerID, comment.UserID) {
+		return ErrNoPermissions
 	}
 
-	// Delete
 	err = u.storage.Delete(ctx, cm)
 	if err != nil {
-		return fmt.Errorf("CommentUseCases - Delete - u.storage.Delete: %w", err)
+		return fmt.Errorf("CommentUseCase - Delete - u.storage.Delete: %w", err)
 	}
 
 	return nil
 }
 
-func (u *CommentUseCases) GetAll(ctx context.Context, recipeID int) ([]entities.Comment, error) {
+func (u *CommentUseCase) GetAll(ctx context.Context, recipeID int) ([]entities.Comment, error) {
 	comments, err := u.storage.GetAll(ctx, recipeID)
 	if err != nil {
-		return nil, fmt.Errorf("CommentUseCases - GetCommets - u.storage.GetCommets: %w", err)
+		return nil, fmt.Errorf("CommentUseCase - GetAll - u.storage.GetAll: %w", err)
+	}
+
+	for _, comment := range comments {
+		comment.Author, err = u.userUseCase.GetAuthor(ctx, comment.UserID)
+		if err != nil {
+			return nil, fmt.Errorf("CommentUseCase - GetAll - u.userUseCase.GetAuthor: %w", err)
+		}
 	}
 
 	return comments, nil
