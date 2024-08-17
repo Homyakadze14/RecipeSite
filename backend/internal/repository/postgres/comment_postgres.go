@@ -25,7 +25,7 @@ func (r *CommentRepo) Save(ctx context.Context, cm *entities.Comment) error {
 	_, err := r.Pool.Exec(ctx, "INSERT INTO comments(user_id, recipe_id, text, created_at, updated_at) VALUES ($1,$2,$3,$4,$5)",
 		cm.UserID, cm.RecipeID, cm.Text, time.Now(), time.Now())
 	if err != nil {
-		if strings.Contains(err.Error(), "ОШИБКА: INSERT или UPDATE в таблице") {
+		if strings.Contains(err.Error(), "SQLSTATE 23503") {
 			return usecases.ErrRecipeNotFound
 		}
 		return fmt.Errorf("CommentRepo - Save - r.Pool.Exec: %w", err)
@@ -37,7 +37,7 @@ func (r *CommentRepo) Save(ctx context.Context, cm *entities.Comment) error {
 func (r *CommentRepo) Update(ctx context.Context, cm *entities.CommentUpdate) error {
 	_, err := r.Pool.Exec(ctx, "UPDATE comments SET text=$1, updated_at=$2 WHERE id=$3", cm.Text, time.Now(), cm.ID)
 	if err != nil {
-		if strings.Contains(err.Error(), "ОШИБКА: INSERT или UPDATE в таблице") {
+		if strings.Contains(err.Error(), "SQLSTATE 23503") {
 			return usecases.ErrRecipeNotFound
 		}
 		return fmt.Errorf("CommentRepo - Update - r.Pool.Exec: %w", err)

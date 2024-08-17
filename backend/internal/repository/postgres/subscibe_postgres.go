@@ -23,7 +23,7 @@ func NewSubscribeRepository(pg *postgres.Postgres) *SubscribeRepo {
 func (r *SubscribeRepo) Subscribe(ctx context.Context, info *entities.SubscribeInfo) error {
 	_, err := r.Pool.Exec(ctx, "INSERT INTO subscriptions(creator_id, subscriber_id) VALUES ($1,$2)", info.CreatorID, info.SubscriberID)
 	if err != nil {
-		if strings.Contains(err.Error(), "ОШИБКА: INSERT или UPDATE в таблице") {
+		if strings.Contains(err.Error(), "SQLSTATE 23503") {
 			return usecases.ErrUserNotFound
 		}
 		return fmt.Errorf("SubscribeRepo - Subscribe - r.Pool.Exec: %w", err)
@@ -34,7 +34,7 @@ func (r *SubscribeRepo) Subscribe(ctx context.Context, info *entities.SubscribeI
 func (r *SubscribeRepo) Unsubscribe(ctx context.Context, info *entities.SubscribeInfo) error {
 	_, err := r.Pool.Exec(ctx, "DELETE FROM subscriptions WHERE creator_id=$1 AND subscriber_id=$2", info.CreatorID, info.SubscriberID)
 	if err != nil {
-		if strings.Contains(err.Error(), "ОШИБКА: INSERT или UPDATE в таблице") {
+		if strings.Contains(err.Error(), "SQLSTATE 23503") {
 			return usecases.ErrUserNotFound
 		}
 		return fmt.Errorf("SubscribeRepo - Unsubscribe - r.Pool.Exec: %w", err)

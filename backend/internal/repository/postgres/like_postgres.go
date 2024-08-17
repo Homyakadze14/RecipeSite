@@ -50,7 +50,7 @@ func (l *LikeRepo) LikesCount(ctx context.Context, recipeID int) (int, error) {
 func (l *LikeRepo) Like(ctx context.Context, like *entities.Like) error {
 	_, err := l.Pool.Exec(ctx, "INSERT INTO likes(user_id, recipe_id) VALUES ($1, $2)", like.UserID, like.RecipeID)
 	if err != nil {
-		if strings.Contains(err.Error(), "ОШИБКА: INSERT или UPDATE в таблице") {
+		if strings.Contains(err.Error(), "SQLSTATE 23503") {
 			return usecases.ErrRecipeNotFound
 		}
 		return fmt.Errorf("LikeRepo - Like - r.Pool.Exec: %w", err)
@@ -61,7 +61,7 @@ func (l *LikeRepo) Like(ctx context.Context, like *entities.Like) error {
 func (l *LikeRepo) Unlike(ctx context.Context, like *entities.Like) error {
 	_, err := l.Pool.Exec(ctx, "DELETE FROM likes WHERE user_id=$1 AND recipe_id=$2", like.UserID, like.RecipeID)
 	if err != nil {
-		if strings.Contains(err.Error(), "ОШИБКА: INSERT или UPDATE в таблице") {
+		if strings.Contains(err.Error(), "SQLSTATE 23503") {
 			return usecases.ErrRecipeNotFound
 		}
 		return fmt.Errorf("LikeRepo - Like - r.Pool.Exec: %w", err)

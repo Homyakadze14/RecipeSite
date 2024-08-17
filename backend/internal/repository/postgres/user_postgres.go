@@ -26,7 +26,7 @@ func (r *UserRepo) Create(ctx context.Context, user *entities.User) (id int, err
 		user.Email, user.Login, user.Password, user.IconURL, user.About, time.Now())
 	err = row.Scan(&id)
 	if err != nil {
-		if strings.Contains(err.Error(), "повторяющееся значение ключа") {
+		if strings.Contains(err.Error(), "SQLSTATE 23505") {
 			return -1, usecases.ErrUserUnique
 		}
 		return -1, fmt.Errorf("UserRepo - Create - r.Pool.QueryRow: %w", err)
@@ -78,7 +78,7 @@ func (r *UserRepo) Update(ctx context.Context, user *entities.User) error {
 		user.Email, user.Login, user.IconURL, user.About, user.ID)
 
 	if err != nil {
-		if strings.Contains(err.Error(), "повторяющееся значение ключа") {
+		if strings.Contains(err.Error(), "SQLSTATE 23505") {
 			return usecases.ErrUserUnique
 		}
 		return fmt.Errorf("UserRepo - Update - r.Pool.Exec: %w", err)
