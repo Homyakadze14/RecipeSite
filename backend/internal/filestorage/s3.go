@@ -36,29 +36,50 @@ func NewS3Storage(cfg *config.Config) (*S3Storage, error) {
 	return &S3Storage{s3Client, &cfg.S3.BUCKET_NAME, cfg.S3.DEFAULT_ICON_URL}, nil
 }
 
-func (s *S3Storage) Save(photos []io.ReadSeeker, contentType string) (string, error) {
-	url := ""
+func (s *S3Storage) saveToS3(urlCh chan<- string, errCh chan<- error, photo io.ReadSeeker, contentType string) {
+	uid := uuid.New().String()
+	_, err := s.PutObject(&s3.PutObjectInput{
+		Body:        photo,
+		Bucket:      s.bucket,
+		Key:         aws.String(uid),
+		ContentType: aws.String(contentType),
+	})
 
-	for _, photo := range photos {
-		uid := uuid.New().String()
-		_, err := s.PutObject(&s3.PutObjectInput{
-			Body:        photo,
-			Bucket:      s.bucket,
-			Key:         aws.String(uid),
-			ContentType: aws.String(contentType),
-		})
-		if err != nil {
-			return "", err
-		}
-		url += fmt.Sprintf("%s/%s/%s", s.Endpoint, *s.bucket, uid) + ";"
+	if err != nil {
+		errCh <- err
 	}
 
-	return url, nil
+	urlCh <- fmt.Sprintf("%s/%s/%s", s.Endpoint, *s.bucket, uid) + ";"
+}
+
+func (s *S3Storage) Save(photos []io.ReadSeeker, contentType string) (string, error) {
+	urls := ""
+
+	urlChan := make(chan string)
+	errChan := make(chan error)
+
+	defer close(urlChan)
+	defer close(errChan)
+
+	for _, photo := range photos {
+		go s.saveToS3(urlChan, errChan, photo, contentType)
+	}
+
+	for i := 0; i < len(photos); i++ {
+		select {
+		case url := <-urlChan:
+			urls += url
+		case err := <-errChan:
+			return "", err
+		}
+	}
+
+	return urls, nil
 }
 
 func getFileName(path string) string {
 	elems := strings.Split(path, "/")
-	return strings.Split(path, "/")[len(elems)-1]
+	return elems[len(elems)-1]
 }
 
 func (s *S3Storage) Remove(path string) error {

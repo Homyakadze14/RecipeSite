@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 
 	"github.com/Homyakadze14/RecipeSite/internal/common"
 	"github.com/Homyakadze14/RecipeSite/internal/entities"
@@ -237,10 +238,12 @@ func (r *RecipeUseCases) Create(ctx context.Context, login string, ownerID int, 
 		RecipeID:  id,
 	}
 
-	err = r.subscribeUseCase.SendToMsgBroker(ctx, message)
-	if err != nil {
-		return fmt.Errorf("RecipeUseCase - Create - RMQ - r.subscribeUseCase.SendToMsgBroker: %w", err)
-	}
+	go func() {
+		err = r.subscribeUseCase.SendToMsgBroker(ctx, message)
+		if err != nil {
+			slog.Error(fmt.Sprintf("RecipeUseCase - Create - r.subscribeUseCase.SendToMsgBroker: %s", err.Error()))
+		}
+	}()
 
 	return nil
 }
