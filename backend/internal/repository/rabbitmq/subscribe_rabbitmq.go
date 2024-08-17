@@ -59,7 +59,7 @@ func (u *SubscribeRabbitMQRepo) CloseChan() error {
 	return nil
 }
 
-func (u *SubscribeRabbitMQRepo) Send(ctx context.Context, message *entities.NewRecipeRMQMessage) error {
+func (u *SubscribeRabbitMQRepo) Send(ctx context.Context, message *entities.RecipeCreationMsg) error {
 	body, err := json.Marshal(message)
 	if err != nil {
 		return fmt.Errorf("SubscribeRabbitMQRepository - Send - json.Marshal: %w", err)

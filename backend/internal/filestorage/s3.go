@@ -2,7 +2,7 @@ package filestorage
 
 import (
 	"fmt"
-	"mime/multipart"
+	"io"
 	"strings"
 
 	"github.com/Homyakadze14/RecipeSite/config"
@@ -36,19 +36,24 @@ func NewS3Storage(cfg *config.Config) (*S3Storage, error) {
 	return &S3Storage{s3Client, &cfg.S3.BUCKET_NAME, cfg.S3.DEFAULT_ICON_URL}, nil
 }
 
-func (s *S3Storage) Save(image multipart.File, contentType string) (string, error) {
-	uid := uuid.New().String()
-	_, err := s.PutObject(&s3.PutObjectInput{
-		Body:        image,
-		Bucket:      s.bucket,
-		Key:         aws.String(uid),
-		ContentType: aws.String(contentType),
-	})
-	if err != nil {
-		return "", err
+func (s *S3Storage) Save(photos []io.ReadSeeker, contentType string) (string, error) {
+	url := ""
+
+	for _, photo := range photos {
+		uid := uuid.New().String()
+		_, err := s.PutObject(&s3.PutObjectInput{
+			Body:        photo,
+			Bucket:      s.bucket,
+			Key:         aws.String(uid),
+			ContentType: aws.String(contentType),
+		})
+		if err != nil {
+			return "", err
+		}
+		url += fmt.Sprintf("%s/%s/%s", s.Endpoint, *s.bucket, uid) + ";"
 	}
 
-	return fmt.Sprintf("%s/%s/%s", s.Endpoint, *s.bucket, uid), nil
+	return url, nil
 }
 
 func getFileName(path string) string {
@@ -61,27 +66,21 @@ func (s *S3Storage) Remove(path string) error {
 		return nil
 	}
 
-	if strings.Contains(path, ";") {
-		for _, v := range strings.Split(path, ";") {
-			if v == "" {
-				continue
-			}
+	urls := strings.Split(path, ";")
 
-			_, err := s.DeleteObject(&s3.DeleteObjectInput{
-				Bucket: s.bucket,
-				Key:    aws.String(getFileName(v)),
-			})
-			if err != nil {
-				return err
-			}
+	for _, url := range urls {
+		if url == "" {
+			continue
 		}
-		return nil
+
+		_, err := s.DeleteObject(&s3.DeleteObjectInput{
+			Bucket: s.bucket,
+			Key:    aws.String(getFileName(url)),
+		})
+		if err != nil {
+			return fmt.Errorf("S3 - Remove - s.DeleteObject: %w", err)
+		}
 	}
 
-	_, err := s.DeleteObject(&s3.DeleteObjectInput{
-		Bucket: s.bucket,
-		Key:    aws.String(getFileName(path)),
-	})
-
-	return err
+	return nil
 }

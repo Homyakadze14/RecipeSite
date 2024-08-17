@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"mime/multipart"
+	"io"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/Homyakadze14/RecipeSite/internal/common"
 	"github.com/Homyakadze14/RecipeSite/internal/entities"
-	redisrepo "github.com/Homyakadze14/RecipeSite/internal/repository/redis"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -26,7 +26,7 @@ type userStorage interface {
 }
 
 type fileStorage interface {
-	Save(image multipart.File, contentType string) (string, error)
+	Save(photos []io.ReadSeeker, contentType string) (string, error)
 	Remove(path string) error
 }
 
@@ -73,7 +73,6 @@ var (
 	ErrUserUnique        = errors.New("user with this credentials already exists")
 	ErrUserNotFound      = errors.New("user not found")
 	ErrUserWrongPassword = errors.New("wrong password")
-	ErrNoPermissions     = errors.New("no permissions")
 	ErrUserNotImage      = errors.New("icon must be image")
 )
 
@@ -111,7 +110,7 @@ func (u *UserUseCases) GetAuthor(ctx context.Context, id int) (*entities.Author,
 	author := &entities.Author{}
 	err := u.cache.Get(ctx, cackeKey, author)
 	if err != nil {
-		if errors.Is(err, redisrepo.ErrRedisKeyNotFound) {
+		if errors.Is(err, common.ErrCacheKeyNotFound) {
 			// Get author from db
 			author, err = u.storage.GetAuthor(ctx, id)
 			if err != nil {
@@ -245,7 +244,7 @@ func (u *UserUseCases) Update(gc *gin.Context, login string, user *entities.User
 
 	// Check who update user
 	if sess.UserID != dbUser.ID {
-		return "", ErrNoPermissions
+		return "", common.ErrNoPermissions
 	}
 
 	// Icon
@@ -326,7 +325,7 @@ func (u *UserUseCases) UpdatePassword(ctx context.Context, login string, user *e
 
 	// Check who update user
 	if sess.UserID != dbUser.ID {
-		return ErrNoPermissions
+		return common.ErrNoPermissions
 	}
 
 	// Hash password

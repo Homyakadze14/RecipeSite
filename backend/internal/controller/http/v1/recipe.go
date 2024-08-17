@@ -2,6 +2,7 @@ package v1
 
 import (
 	"errors"
+	"io"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -11,6 +12,11 @@ import (
 	"github.com/Homyakadze14/RecipeSite/internal/entities"
 	"github.com/Homyakadze14/RecipeSite/internal/usecases"
 	"github.com/gin-gonic/gin"
+)
+
+const (
+	maxFilesSize    = 10 << 20
+	photosArrLenght = 5
 )
 
 type recipeRoutes struct {
@@ -49,7 +55,7 @@ func (r *recipeRoutes) getAll(c *gin.Context) {
 	recipes, err := r.u.GetAll(c.Request.Context())
 	if err != nil {
 		slog.Error(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 		return
 	}
 
@@ -82,7 +88,7 @@ func (r *recipeRoutes) getFiltered(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrBadOrderField.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError})
 		return
 	}
 
@@ -100,25 +106,37 @@ func (r *recipeRoutes) getFiltered(c *gin.Context) {
 // @Failure     500
 // @Router      /recipe/{id} [get]
 func (r *recipeRoutes) get(c *gin.Context) {
-	// Get recipe id
-	strRecipeID, ok := c.Params.Get("id")
+	urlParam, ok := c.Params.Get("id")
 	if !ok {
-		errRecipeID := "ID must be provided"
-		slog.Error(errRecipeID)
-		c.JSON(http.StatusBadRequest, gin.H{"error": errRecipeID})
+		slog.Error(common.ErrUrlParam.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrUrlParam.Error()})
 		return
 	}
 
-	recipeID, err := strconv.Atoi(strRecipeID)
+	recipeID, err := strconv.Atoi(urlParam)
 	if err != nil {
-		errRecipeID := "ID must be integer"
-		slog.Error(errRecipeID)
-		c.JSON(http.StatusBadRequest, gin.H{"error": errRecipeID})
+		slog.Error(common.ErrRecipeIDType.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrRecipeIDType.Error()})
 		return
 	}
 
-	// Get recipe
-	recipes, err := r.u.Get(c.Request.Context(), c.Request, recipeID)
+	sess, err := r.su.GetSession(c.Request)
+	authorized := true
+	userID := 0
+	if err != nil {
+		if !errors.Is(err, usecases.ErrUnauth) {
+			slog.Error(err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
+			return
+		}
+		authorized = false
+	}
+
+	if authorized {
+		userID = sess.UserID
+	}
+
+	recipe, err := r.u.Get(c.Request.Context(), recipeID, userID, authorized)
 	if err != nil {
 		slog.Error(err.Error())
 		if errors.Is(err, usecases.ErrRecipeNotFound) {
@@ -129,11 +147,41 @@ func (r *recipeRoutes) get(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrUserNotFound.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, entities.RecipeInfo{Info: recipes})
+	c.JSON(http.StatusOK, entities.RecipeInfo{Info: recipe})
+}
+
+func (r *recipeRoutes) getPhotos(c *gin.Context) ([]io.ReadSeeker, error) {
+	err := c.Request.ParseMultipartForm(maxFilesSize)
+	if err != nil {
+		return nil, common.ErrHudgeFiles
+	}
+
+	multipartFormData, err := c.MultipartForm()
+	if err != nil {
+		return nil, err
+	}
+	files := multipartFormData.File["photos"]
+
+	photos := make([]io.ReadSeeker, 0, photosArrLenght)
+
+	for _, fileHeader := range files {
+		if !strings.Contains(fileHeader.Header.Get("Content-Type"), "image") {
+			return nil, common.ErrImageType
+		}
+
+		file, err := fileHeader.Open()
+		defer file.Close()
+		if err != nil {
+			return nil, err
+		}
+		photos = append(photos, file)
+	}
+
+	return photos, nil
 }
 
 // @Summary     Create recipe
@@ -157,26 +205,15 @@ func (r *recipeRoutes) create(c *gin.Context) {
 		return
 	}
 
-	// Get user login
 	login, ok := c.Params.Get("login")
 	if !ok {
-		errLogin := "Login must be provided in url"
-		slog.Error(errLogin)
-		c.JSON(http.StatusBadRequest, gin.H{"error": errLogin})
+		slog.Error(common.ErrLoginProvided.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrLoginProvided.Error()})
 		return
 	}
 
-	// Check file size
-	err := c.Request.ParseMultipartForm(10 << 20)
-	if err != nil {
-		slog.Error(err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": "file is too huge"})
-		return
-	}
-
-	// Parse form values to recipe
-	recipe := &entities.CreateRecipe{}
-	if err := c.Bind(&recipe); err != nil {
+	params := &entities.CreateRecipe{}
+	if err := c.Bind(&params); err != nil {
 		slog.Error(err.Error())
 		if errors.Is(err, strconv.ErrSyntax) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrComplexityMustBeInt.Error()})
@@ -186,8 +223,30 @@ func (r *recipeRoutes) create(c *gin.Context) {
 		return
 	}
 
-	// Create
-	err = r.u.Create(c, login, recipe)
+	photos, err := r.getPhotos(c)
+	if err != nil {
+		slog.Error(err.Error())
+		if errors.Is(err, common.ErrHudgeFiles) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrHudgeFiles.Error()})
+			return
+		}
+		if errors.Is(err, common.ErrImageType) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrImageType.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
+		return
+	}
+	params.Photos = photos
+
+	sess, err := r.su.SessionFromContext(c)
+	if err != nil {
+		slog.Error(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
+		return
+	}
+
+	err = r.u.Create(c, login, sess.UserID, params)
 	if err != nil {
 		slog.Error(err.Error())
 		if strings.Contains(err.Error(), "RMQ") {
@@ -197,8 +256,8 @@ func (r *recipeRoutes) create(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": usecases.ErrUserNotFound.Error()})
 			return
 		}
-		if errors.Is(err, usecases.ErrNoPermissions) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrNoPermissions.Error()})
+		if errors.Is(err, common.ErrNoPermissions) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrNoPermissions.Error()})
 			return
 		}
 		if errors.Is(err, usecases.ErrEmptyPhotos) {
@@ -238,50 +297,58 @@ func (r *recipeRoutes) update(c *gin.Context) {
 		return
 	}
 
-	// Get user login
 	login, ok := c.Params.Get("login")
 	if !ok {
-		errLogin := "Login must be provided in url"
-		slog.Error(errLogin)
-		c.JSON(http.StatusBadRequest, gin.H{"error": errLogin})
+		slog.Error(common.ErrLoginProvided.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrLoginProvided.Error()})
 		return
 	}
 
-	// Get recipe id
-	strRecipeID, ok := c.Params.Get("id")
+	urlParam, ok := c.Params.Get("id")
 	if !ok {
-		errRecipeID := "ID must be provided"
-		slog.Error(errRecipeID)
-		c.JSON(http.StatusBadRequest, gin.H{"error": errRecipeID})
+		slog.Error(common.ErrUrlParam.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrUrlParam.Error()})
 		return
 	}
 
-	recipeID, err := strconv.Atoi(strRecipeID)
+	recipeID, err := strconv.Atoi(urlParam)
 	if err != nil {
-		errRecipeID := "ID must be integer"
-		slog.Error(errRecipeID)
-		c.JSON(http.StatusBadRequest, gin.H{"error": errRecipeID})
+		slog.Error(common.ErrRecipeIDType.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrRecipeIDType.Error()})
 		return
 	}
 
-	// Check file size
-	err = c.Request.ParseMultipartForm(10 << 20)
-	if err != nil {
-		slog.Error(err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": "file is too huge"})
-		return
-	}
-
-	// Parse form values to recipe
-	recipe := &entities.UpdateRecipe{}
-	if err := c.Bind(&recipe); err != nil {
+	params := &entities.UpdateRecipe{}
+	if err := c.Bind(&params); err != nil {
 		slog.Error(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": common.GetErrMessages(err).Error()})
 		return
 	}
 
-	// Update
-	err = r.u.Update(c, login, recipeID, recipe)
+	photos, err := r.getPhotos(c)
+	if err != nil {
+		slog.Error(err.Error())
+		if errors.Is(err, common.ErrHudgeFiles) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrHudgeFiles.Error()})
+			return
+		}
+		if errors.Is(err, common.ErrImageType) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrImageType.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
+		return
+	}
+	params.Photos = photos
+
+	sess, err := r.su.SessionFromContext(c)
+	if err != nil {
+		slog.Error(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
+		return
+	}
+
+	err = r.u.Update(c, login, sess.UserID, recipeID, params)
 	if err != nil {
 		slog.Error(err.Error())
 		if errors.Is(err, usecases.ErrUserNotFound) {
@@ -292,15 +359,15 @@ func (r *recipeRoutes) update(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": usecases.ErrRecipeNotFound.Error()})
 			return
 		}
-		if errors.Is(err, usecases.ErrNoPermissions) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrNoPermissions.Error()})
+		if errors.Is(err, common.ErrNoPermissions) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrNoPermissions.Error()})
 			return
 		}
 		if errors.Is(err, usecases.ErrUserNotImage) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrUserNotImage.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 		return
 	}
 
@@ -319,34 +386,35 @@ func (r *recipeRoutes) update(c *gin.Context) {
 // @Failure     500
 // @Router      /user/{login}/recipe/{id} [delete]
 func (r *recipeRoutes) delete(c *gin.Context) {
-	// Get user login
 	login, ok := c.Params.Get("login")
 	if !ok {
-		errLogin := "Login must be provided in url"
-		slog.Error(errLogin)
-		c.JSON(http.StatusBadRequest, gin.H{"error": errLogin})
+		slog.Error(common.ErrLoginProvided.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrLoginProvided.Error()})
 		return
 	}
 
-	// Get recipe id
-	strRecipeID, ok := c.Params.Get("id")
+	urlParam, ok := c.Params.Get("id")
 	if !ok {
-		errRecipeID := "ID must be provided"
-		slog.Error(errRecipeID)
-		c.JSON(http.StatusBadRequest, gin.H{"error": errRecipeID})
+		slog.Error(common.ErrUrlParam.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrUrlParam.Error()})
 		return
 	}
 
-	recipeID, err := strconv.Atoi(strRecipeID)
+	recipeID, err := strconv.Atoi(urlParam)
 	if err != nil {
-		errRecipeID := "ID must be integer"
-		slog.Error(errRecipeID)
-		c.JSON(http.StatusBadRequest, gin.H{"error": errRecipeID})
+		slog.Error(common.ErrRecipeIDType.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrRecipeIDType.Error()})
 		return
 	}
 
-	// Delete
-	err = r.u.Delete(c, login, recipeID)
+	sess, err := r.su.SessionFromContext(c)
+	if err != nil {
+		slog.Error(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
+		return
+	}
+
+	err = r.u.Delete(c, login, sess.UserID, recipeID)
 	if err != nil {
 		slog.Error(err.Error())
 		if errors.Is(err, usecases.ErrUserNotFound) {
@@ -357,11 +425,11 @@ func (r *recipeRoutes) delete(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": usecases.ErrRecipeNotFound.Error()})
 			return
 		}
-		if errors.Is(err, usecases.ErrNoPermissions) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrNoPermissions.Error()})
+		if errors.Is(err, common.ErrNoPermissions) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrNoPermissions.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 		return
 	}
 

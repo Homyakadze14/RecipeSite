@@ -53,7 +53,7 @@ func (u *CommentUseCase) Update(ctx context.Context, cm *entities.CommentUpdate,
 	}
 
 	if !common.HavePermisson(ownerID, comment.UserID) {
-		return ErrNoPermissions
+		return common.ErrNoPermissions
 	}
 
 	err = u.storage.Update(ctx, cm)
@@ -71,7 +71,7 @@ func (u *CommentUseCase) Delete(ctx context.Context, cm *entities.CommentDelete,
 	}
 
 	if !common.HavePermisson(ownerID, comment.UserID) {
-		return ErrNoPermissions
+		return common.ErrNoPermissions
 	}
 
 	err = u.storage.Delete(ctx, cm)

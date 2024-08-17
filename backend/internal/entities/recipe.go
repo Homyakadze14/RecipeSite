@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"io"
 	"time"
 )
 
@@ -18,19 +19,57 @@ type Recipe struct {
 }
 
 type CreateRecipe struct {
-	Title       string `json:"title" binding:"required,min=3,max=50"  form:"title"`
-	About       string `json:"about" binding:"required,max=2500"  form:"about"`
-	Complexitiy int    `json:"complexitiy" binding:"required,min=1,max=3"  enums:"1,2,3" form:"complexitiy"`
-	NeedTime    string `json:"need_time" binding:"required"  form:"need_time"`
-	Ingridients string `json:"ingridients" binding:"required,max=1500"  form:"ingridients"`
+	Title       string          `json:"title" binding:"required,min=3,max=50"  form:"title"`
+	About       string          `json:"about" binding:"required,max=2500"  form:"about"`
+	Complexitiy int             `json:"complexitiy" binding:"required,min=1,max=3"  enums:"1,2,3" form:"complexitiy"`
+	NeedTime    string          `json:"need_time" binding:"required"  form:"need_time"`
+	Ingridients string          `json:"ingridients" binding:"required,max=1500"  form:"ingridients"`
+	Photos      []io.ReadSeeker `json:"-"`
+}
+
+func (r *CreateRecipe) HavePhotos() bool {
+	return len(r.Photos) != 0
+}
+
+func (r *CreateRecipe) ToRecipe() *Recipe {
+	return &Recipe{
+		Title:       r.Title,
+		About:       r.About,
+		Complexitiy: r.Complexitiy,
+		NeedTime:    r.NeedTime,
+		Ingridients: r.Ingridients,
+	}
 }
 
 type UpdateRecipe struct {
-	Title       string `json:"title" binding:"omitempty,min=3,max=50"  form:"title"`
-	About       string `json:"about" binding:"omitempty,max=2500"  form:"about"`
-	Complexitiy int    `json:"complexitiy" binding:"omitempty,min=1,max=3" enums:"1,2,3" form:"complexitiy"`
-	NeedTime    string `json:"need_time" binding:"omitempty"  form:"need_time"`
-	Ingridients string `json:"ingridients" binding:"omitempty,max=1500"  form:"ingridients"`
+	Title       string          `json:"title" binding:"omitempty,min=3,max=50"  form:"title"`
+	About       string          `json:"about" binding:"omitempty,max=2500"  form:"about"`
+	Complexitiy int             `json:"complexitiy" binding:"omitempty,min=1,max=3" enums:"1,2,3" form:"complexitiy"`
+	NeedTime    string          `json:"need_time" binding:"omitempty"  form:"need_time"`
+	Ingridients string          `json:"ingridients" binding:"omitempty,max=1500"  form:"ingridients"`
+	Photos      []io.ReadSeeker `json:"-"`
+}
+
+func (r *UpdateRecipe) HavePhotos() bool {
+	return len(r.Photos) != 0
+}
+
+func (r *UpdateRecipe) UpdateValues(recipe *Recipe) {
+	if r.Complexitiy != 0 {
+		recipe.Complexitiy = r.Complexitiy
+	}
+	if r.Title != "" {
+		recipe.Title = r.Title
+	}
+	if r.About != "" {
+		recipe.About = r.About
+	}
+	if r.NeedTime != "" {
+		recipe.NeedTime = r.NeedTime
+	}
+	if r.Ingridients != "" {
+		recipe.Ingridients = r.Ingridients
+	}
 }
 
 type RecipeInfo struct {

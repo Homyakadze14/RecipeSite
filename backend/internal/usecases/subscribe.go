@@ -28,7 +28,7 @@ type sessionManagerForSubscribe interface {
 }
 
 type rmqRepository interface {
-	Send(ctx context.Context, message *entities.NewRecipeRMQMessage) error
+	Send(ctx context.Context, message *entities.RecipeCreationMsg) error
 }
 
 type SubscribeUseCases struct {
@@ -123,7 +123,7 @@ func (u *SubscribeUseCases) Unsubscribe(ctx context.Context, creator *entities.S
 	return nil
 }
 
-func (u *SubscribeUseCases) SendToRmq(ctx context.Context, message *entities.NewRecipeRMQMessage) error {
+func (u *SubscribeUseCases) SendToMsgBroker(ctx context.Context, message *entities.RecipeCreationMsg) error {
 	err := u.rmqRepository.Send(ctx, message)
 	if err != nil {
 		return fmt.Errorf("SubscribeUseCases - SendToRmq - u.rmqRepository.Send: %w", err)

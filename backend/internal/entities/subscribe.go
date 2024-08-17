@@ -9,7 +9,7 @@ type SubscribeCreator struct {
 	ID int `json:"creator_id" binding:"required"`
 }
 
-type NewRecipeRMQMessage struct {
+type RecipeCreationMsg struct {
 	CreatorID int
 	RecipeID  int
 }

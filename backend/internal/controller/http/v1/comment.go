@@ -119,8 +119,8 @@ func (r *commentRoutes) update(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrCommentNotFound.Error()})
 			return
 		}
-		if errors.Is(err, usecases.ErrNoPermissions) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrNoPermissions.Error()})
+		if errors.Is(err, common.ErrNoPermissions) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrNoPermissions.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
@@ -164,8 +164,8 @@ func (r *commentRoutes) delete(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrCommentNotFound.Error()})
 			return
 		}
-		if errors.Is(err, usecases.ErrNoPermissions) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrNoPermissions.Error()})
+		if errors.Is(err, common.ErrNoPermissions) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrNoPermissions.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})

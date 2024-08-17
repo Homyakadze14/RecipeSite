@@ -3,19 +3,15 @@ package redisrepo
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
 
+	"github.com/Homyakadze14/RecipeSite/internal/common"
 	"github.com/redis/go-redis/v9"
 )
 
 const (
 	_defaultExperationTime = 5 * time.Minute
-)
-
-var (
-	ErrRedisKeyNotFound = errors.New("key not found")
 )
 
 type RedisRepo struct {
@@ -45,7 +41,7 @@ func (r *RedisRepo) Get(ctx context.Context, key string, dest interface{}) error
 	err := r.redis.Get(ctx, key).Scan(&value)
 	if err != nil {
 		if err == redis.Nil {
-			return ErrRedisKeyNotFound
+			return common.ErrCacheKeyNotFound
 		}
 		return fmt.Errorf("RedisRepo - Get - r.redis.Get: %w", err)
 	}

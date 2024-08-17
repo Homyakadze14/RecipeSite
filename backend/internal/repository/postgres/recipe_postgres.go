@@ -123,7 +123,7 @@ func (r *RecipeRepo) Get(ctx context.Context, id int) (*entities.Recipe, error) 
 	return recipe, nil
 }
 
-func (r *RecipeRepo) Create(ctx context.Context, recipe *entities.Recipe) (id int, err error) {
+func (r *RecipeRepo) Save(ctx context.Context, recipe *entities.Recipe) (id int, err error) {
 	row := r.Pool.QueryRow(ctx, "INSERT INTO recipes(user_id,title,about,complexitiy,need_time,ingridients,photos_urls,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id",
 		recipe.UserID, recipe.Title, recipe.About, recipe.Complexitiy, recipe.NeedTime, recipe.Ingridients, recipe.PhotosUrls, time.Now(), time.Now())
 
