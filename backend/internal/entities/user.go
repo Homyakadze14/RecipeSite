@@ -42,11 +42,14 @@ type UserUpdate struct {
 }
 
 func (u *UserUpdate) UpdateValues(user *User) {
-	if u.Email == "" {
+	if u.Email != "" {
 		user.Email = u.Email
 	}
-	if u.Login == "" {
+	if u.Login != "" {
 		user.Login = u.Login
+	}
+	if u.About != "" {
+		user.About = u.About
 	}
 }
 

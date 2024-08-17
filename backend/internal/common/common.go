@@ -14,5 +14,5 @@ var (
 )
 
 func HavePermisson(needID, haveID int) bool {
-	return needID != haveID
+	return needID == haveID
 }

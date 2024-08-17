@@ -285,7 +285,7 @@ func (u *UserUseCase) Update(ctx context.Context, login string, ownerID int, par
 			return "", fmt.Errorf("%w; UserUseCase - Update - u.fileStorage.Remove: %w", storageErr, err)
 		}
 
-		return "", fmt.Errorf("UserUseCase - Update - u.storage.Update: %w", err)
+		return "", storageErr
 	}
 
 	_, err = u.cache.Del(ctx, u.formCacheKey(user.ID))
