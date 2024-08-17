@@ -9,6 +9,7 @@ from bot.database.models.main import TgUsers
 
 from os import environ
 import requests
+from loguru import logger
 
 router = Router()
 
@@ -58,6 +59,7 @@ async def enter_token(message: Message, state: FSMContext):
                 f"Упс! Возникла ошибка на сервере, попробуйте снова через небольшой промежуток времени!")
             await state.clear()
     except Exception as e:
+        logger.error(e)
         await message.answer(f"Упс! Возникла ошибка на сервере, попробуйте снова через небольшой промежуток времени!")
         await state.clear()
 
