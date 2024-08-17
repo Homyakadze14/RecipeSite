@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/Homyakadze14/RecipeSite/internal/entities"
+	"github.com/Homyakadze14/RecipeSite/internal/usecases"
 	"github.com/Homyakadze14/RecipeSite/pkg/postgres"
 	"github.com/jackc/pgx/v5"
 )
@@ -48,6 +50,9 @@ func (l *LikeRepo) LikesCount(ctx context.Context, recipeID int) (int, error) {
 func (l *LikeRepo) Like(ctx context.Context, like *entities.Like) error {
 	_, err := l.Pool.Exec(ctx, "INSERT INTO likes(user_id, recipe_id) VALUES ($1, $2)", like.UserID, like.RecipeID)
 	if err != nil {
+		if strings.Contains(err.Error(), "ОШИБКА: INSERT или UPDATE в таблице") {
+			return usecases.ErrRecipeNotFound
+		}
 		return fmt.Errorf("LikeRepo - Like - r.Pool.Exec: %w", err)
 	}
 	return nil
@@ -56,6 +61,9 @@ func (l *LikeRepo) Like(ctx context.Context, like *entities.Like) error {
 func (l *LikeRepo) Unlike(ctx context.Context, like *entities.Like) error {
 	_, err := l.Pool.Exec(ctx, "DELETE FROM likes WHERE user_id=$1 AND recipe_id=$2", like.UserID, like.RecipeID)
 	if err != nil {
+		if strings.Contains(err.Error(), "ОШИБКА: INSERT или UPDATE в таблице") {
+			return usecases.ErrRecipeNotFound
+		}
 		return fmt.Errorf("LikeRepo - Like - r.Pool.Exec: %w", err)
 	}
 	return nil

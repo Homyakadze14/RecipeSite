@@ -72,8 +72,8 @@ func (r *likeRoutes) like(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrAlreadyLike.Error()})
 			return
 		}
-		if errors.Is(err, usecases.ErrRecipeNotExist) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrRecipeNotExist.Error()})
+		if errors.Is(err, usecases.ErrRecipeNotFound) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrRecipeNotFound.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError})
@@ -127,8 +127,8 @@ func (r *likeRoutes) unlike(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrNotLikedYet.Error()})
 			return
 		}
-		if errors.Is(err, usecases.ErrRecipeNotExist) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrRecipeNotExist.Error()})
+		if errors.Is(err, usecases.ErrRecipeNotFound) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrRecipeNotFound.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})

@@ -47,7 +47,19 @@ func (r *subscribeRoutes) subscribe(c *gin.Context) {
 		return
 	}
 
-	err := r.u.Subscribe(c.Request.Context(), creator, c.Request)
+	sess, err := r.su.SessionFromContext(c)
+	if err != nil {
+		slog.Error(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
+		return
+	}
+
+	info := &entities.SubscribeInfo{
+		CreatorID:    creator.ID,
+		SubscriberID: sess.UserID,
+	}
+
+	err = r.u.Subscribe(c.Request.Context(), info)
 	if err != nil {
 		slog.Error(err.Error())
 		if errors.Is(err, usecases.ErrUserNotFound) {
@@ -62,7 +74,7 @@ func (r *subscribeRoutes) subscribe(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrYourselfSubscribe.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 		return
 	}
 
@@ -89,7 +101,19 @@ func (r *subscribeRoutes) unsubscribe(c *gin.Context) {
 		return
 	}
 
-	err := r.u.Unsubscribe(c.Request.Context(), creator, c.Request)
+	sess, err := r.su.SessionFromContext(c)
+	if err != nil {
+		slog.Error(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
+		return
+	}
+
+	info := &entities.SubscribeInfo{
+		CreatorID:    creator.ID,
+		SubscriberID: sess.UserID,
+	}
+
+	err = r.u.Unsubscribe(c.Request.Context(), info)
 	if err != nil {
 		slog.Error(err.Error())
 		if errors.Is(err, usecases.ErrUserNotFound) {
@@ -104,7 +128,7 @@ func (r *subscribeRoutes) unsubscribe(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrYourselfUnsubscribe.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 		return
 	}
 

@@ -77,6 +77,10 @@ func (r *commentRoutes) create(c *gin.Context) {
 
 	err = r.u.Save(c.Request.Context(), comment)
 	if err != nil {
+		if errors.Is(err, usecases.ErrRecipeNotFound) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrRecipeNotFound.Error()})
+			return
+		}
 		slog.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 		return
@@ -115,6 +119,10 @@ func (r *commentRoutes) update(c *gin.Context) {
 	err = r.u.Update(c.Request.Context(), comment, sess.UserID)
 	if err != nil {
 		slog.Error(err.Error())
+		if errors.Is(err, usecases.ErrRecipeNotFound) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrRecipeNotFound.Error()})
+			return
+		}
 		if errors.Is(err, usecases.ErrCommentNotFound) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrCommentNotFound.Error()})
 			return

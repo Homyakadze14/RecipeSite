@@ -9,9 +9,8 @@ import (
 )
 
 var (
-	ErrAlreadyLike    = errors.New("this recipe already liked")
-	ErrNotLikedYet    = errors.New("this recipe not liked yet")
-	ErrRecipeNotExist = errors.New("recipe not exist")
+	ErrAlreadyLike = errors.New("this recipe already liked")
+	ErrNotLikedYet = errors.New("this recipe not liked yet")
 )
 
 type likeStorage interface {

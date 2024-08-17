@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 
 	"github.com/Homyakadze14/RecipeSite/internal/entities"
 )
@@ -23,52 +22,34 @@ type subscribeStorage interface {
 	GetID(ctx context.Context, info *entities.SubscribeInfo) (int, error)
 }
 
-type sessionManagerForSubscribe interface {
-	GetSession(r *http.Request) (*entities.Session, error)
-}
-
-type rmqRepository interface {
+type msgBrokerRepository interface {
 	Send(ctx context.Context, message *entities.RecipeCreationMsg) error
 }
 
 type SubscribeUseCases struct {
-	storage        subscribeStorage
-	sessionManager sessionManagerForSubscribe
-	rmqRepository  rmqRepository
+	storage             subscribeStorage
+	msgBrokerRepository msgBrokerRepository
 }
 
-func NewSubscribeUsecase(st subscribeStorage, sm sessionManagerForSubscribe, rmq rmqRepository) *SubscribeUseCases {
+func NewSubscribeUsecase(st subscribeStorage, msgBrokerRepo msgBrokerRepository) *SubscribeUseCases {
 	return &SubscribeUseCases{
-		storage:        st,
-		sessionManager: sm,
-		rmqRepository:  rmq,
+		storage:             st,
+		msgBrokerRepository: msgBrokerRepo,
 	}
 }
 
-func (u *SubscribeUseCases) Subscribe(ctx context.Context, creator *entities.SubscribeCreator, r *http.Request) error {
-	// Get session
-	sess, err := u.sessionManager.GetSession(r)
-	if err != nil {
-		return fmt.Errorf("SubscribeUseCases - Subscribe - u.sessionManager.GetSession: %w", err)
-	}
+func (u *SubscribeUseCases) subscribedToYourself(creatorID, ownerID int) bool {
+	return creatorID == ownerID
+}
 
-	// Check subscription to yourself
-	if creator.ID == sess.UserID {
+func (u *SubscribeUseCases) Subscribe(ctx context.Context, info *entities.SubscribeInfo) error {
+	if u.subscribedToYourself(info.CreatorID, info.SubscriberID) {
 		return ErrYourselfSubscribe
 	}
 
-	// Form info
-	info := &entities.SubscribeInfo{
-		CreatorID:    creator.ID,
-		SubscriberID: sess.UserID,
-	}
-
-	// Check if already subscribe
-	_, err = u.storage.GetID(ctx, info)
+	_, err := u.storage.GetID(ctx, info)
 	if err != nil {
-		// Not exist
 		if errors.Is(err, ErrSubscribeNotFound) {
-			// Subscribe
 			err = u.storage.Subscribe(ctx, info)
 			if err != nil {
 				if errors.Is(err, ErrUserNotFound) {
@@ -76,6 +57,7 @@ func (u *SubscribeUseCases) Subscribe(ctx context.Context, creator *entities.Sub
 				}
 				return fmt.Errorf("SubscribeUseCases - Subscribe - u.storage.Subscribe: %w", err)
 			}
+			return nil
 		}
 		return err
 	}
@@ -83,35 +65,19 @@ func (u *SubscribeUseCases) Subscribe(ctx context.Context, creator *entities.Sub
 	return ErrSubscribe
 }
 
-func (u *SubscribeUseCases) Unsubscribe(ctx context.Context, creator *entities.SubscribeCreator, r *http.Request) error {
-	// Get session
-	sess, err := u.sessionManager.GetSession(r)
-	if err != nil {
-		return fmt.Errorf("SubscribeUseCases - Unsubscribe - u.sessionManager.GetSession: %w", err)
-	}
-
-	// Check subscription to yourself
-	if creator.ID == sess.UserID {
+func (u *SubscribeUseCases) Unsubscribe(ctx context.Context, info *entities.SubscribeInfo) error {
+	if u.subscribedToYourself(info.CreatorID, info.SubscriberID) {
 		return ErrYourselfUnsubscribe
 	}
 
-	// Form info
-	info := &entities.SubscribeInfo{
-		CreatorID:    creator.ID,
-		SubscriberID: sess.UserID,
-	}
-
-	// Check if already subscribe
-	_, err = u.storage.GetID(ctx, info)
+	_, err := u.storage.GetID(ctx, info)
 	if err != nil {
-		// Not exist
 		if errors.Is(err, ErrSubscribeNotFound) {
 			return ErrUnsubscribe
 		}
 		return err
 	}
 
-	// Unsubscribe
 	err = u.storage.Unsubscribe(ctx, info)
 	if err != nil {
 		if errors.Is(err, ErrUserNotFound) {
@@ -124,9 +90,9 @@ func (u *SubscribeUseCases) Unsubscribe(ctx context.Context, creator *entities.S
 }
 
 func (u *SubscribeUseCases) SendToMsgBroker(ctx context.Context, message *entities.RecipeCreationMsg) error {
-	err := u.rmqRepository.Send(ctx, message)
+	err := u.msgBrokerRepository.Send(ctx, message)
 	if err != nil {
-		return fmt.Errorf("SubscribeUseCases - SendToRmq - u.rmqRepository.Send: %w", err)
+		return fmt.Errorf("SubscribeUseCases - SendToMsgBroker - u.msgBrokerRepository.Send: %w", err)
 	}
 
 	return nil
