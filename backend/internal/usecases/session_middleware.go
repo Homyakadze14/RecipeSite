@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/Homyakadze14/RecipeSite/internal/common"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,9 +15,9 @@ func (u *SessionUseCase) Auth() gin.HandlerFunc {
 		if err != nil {
 			slog.Error(err.Error())
 			if errors.Is(err, ErrUnauth) {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorize"})
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": ErrUnauth.Error()})
 			} else {
-				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 			}
 			return
 		}
