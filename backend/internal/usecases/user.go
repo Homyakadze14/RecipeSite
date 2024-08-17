@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/Homyakadze14/RecipeSite/internal/common"
@@ -19,8 +18,8 @@ type userStorage interface {
 	Create(ctx context.Context, user *entities.User) (id int, err error)
 	GetByLogin(ctx context.Context, login string) (*entities.User, error)
 	GetByEmail(ctx context.Context, email string) (*entities.User, error)
-	Update(ctx context.Context, id int, user *entities.UserUpdate) error
-	UpdatePassword(ctx context.Context, id int, user *entities.UserPasswordUpdate) error
+	Update(ctx context.Context, user *entities.User) error
+	UpdatePassword(ctx context.Context, user *entities.User) error
 	GetRecipes(ctx context.Context, userID int) ([]entities.Recipe, error)
 	GetAuthor(ctx context.Context, id int) (*entities.Author, error)
 }
@@ -32,7 +31,6 @@ type fileStorage interface {
 
 type sessionManager interface {
 	Create(ctx context.Context, userID int) (*entities.Session, error)
-	GetSession(r *http.Request) (*entities.Session, error)
 	DestroySession(ctx *gin.Context) error
 	DestroyAllSessions(ctx context.Context, userID int) error
 }
@@ -42,30 +40,36 @@ type jwtUseCase interface {
 	GetDataFromJWT(inToken *entities.JWTToken) (*entities.JWTData, error)
 }
 
+type likeUseCaseForUser interface {
+	GetLikedRecipies(ctx context.Context, userID int) ([]entities.Recipe, error)
+}
+
 type cache interface {
 	Set(ctx context.Context, key string, value interface{}) error
 	Get(ctx context.Context, key string, dest interface{}) error
 	Del(ctx context.Context, key string) (res int64, err error)
 }
 
-type UserUseCases struct {
+type UserUseCase struct {
 	storage        userStorage
 	fileStorage    fileStorage
 	sessionManager sessionManager
 	defaultIconUrl string
 	jwtUseCase     jwtUseCase
 	cache          cache
+	likeUseCase    likeUseCaseForUser
 }
 
 func NewUserUsecase(st userStorage, sm sessionManager, df string,
-	fs fileStorage, jwt jwtUseCase, cache cache) *UserUseCases {
-	return &UserUseCases{
+	fs fileStorage, jwt jwtUseCase, cache cache, lu likeUseCaseForUser) *UserUseCase {
+	return &UserUseCase{
 		storage:        st,
 		sessionManager: sm,
 		defaultIconUrl: df,
 		fileStorage:    fs,
 		jwtUseCase:     jwt,
 		cache:          cache,
+		likeUseCase:    lu,
 	}
 }
 
@@ -73,18 +77,10 @@ var (
 	ErrUserUnique        = errors.New("user with this credentials already exists")
 	ErrUserNotFound      = errors.New("user not found")
 	ErrUserWrongPassword = errors.New("wrong password")
-	ErrUserNotImage      = errors.New("icon must be image")
 )
 
-func (u *UserUseCases) GenerateJWT(r *http.Request) (*entities.JWTToken, error) {
-	// Get session
-	sess, err := u.sessionManager.GetSession(r)
-	if err != nil {
-		return nil, fmt.Errorf("UserUseCase - GenerateJWT - u.sessionManager.GetSession: %w", err)
-	}
-
-	// Generate token
-	token, err := u.jwtUseCase.GenerateJWT(sess.UserID)
+func (u *UserUseCase) GenerateJWT(userID int) (*entities.JWTToken, error) {
+	token, err := u.jwtUseCase.GenerateJWT(userID)
 	if err != nil {
 		return nil, fmt.Errorf("UserUseCase - GenerateJWT - u.jwtUseCase.GenerateJWT: %w", err)
 	}
@@ -92,7 +88,7 @@ func (u *UserUseCases) GenerateJWT(r *http.Request) (*entities.JWTToken, error) 
 	return token, nil
 }
 
-func (u *UserUseCases) GetDataFromJWT(token *entities.JWTToken) (*entities.JWTData, error) {
+func (u *UserUseCase) GetDataFromJWT(token *entities.JWTToken) (*entities.JWTData, error) {
 	data, err := u.jwtUseCase.GetDataFromJWT(token)
 	if err != nil {
 		if errors.Is(err, ErrBadToken) {
@@ -104,33 +100,56 @@ func (u *UserUseCases) GetDataFromJWT(token *entities.JWTToken) (*entities.JWTDa
 	return data, nil
 }
 
-func (u *UserUseCases) GetAuthor(ctx context.Context, id int) (*entities.Author, error) {
-	// Get author from cache
-	cackeKey := fmt.Sprintf("author:%v", id)
+func (u *UserUseCase) formCacheKey(userID int) string {
+	return fmt.Sprintf("author:%v", userID)
+}
+
+func (u *UserUseCase) getAuthorFromCache(ctx context.Context, key string) (*entities.Author, error) {
 	author := &entities.Author{}
-	err := u.cache.Get(ctx, cackeKey, author)
+	err := u.cache.Get(ctx, key, author)
 	if err != nil {
 		if errors.Is(err, common.ErrCacheKeyNotFound) {
-			// Get author from db
-			author, err = u.storage.GetAuthor(ctx, id)
+			return nil, common.ErrCacheKeyNotFound
+		}
+		return nil, fmt.Errorf("UserUseCase - getAuthorFromCache - r.cache.Get: %w", err)
+	}
+	return author, nil
+}
+
+func (u *UserUseCase) getAuthorFromStorage(ctx context.Context, id int) (*entities.Author, error) {
+	author, err := u.storage.GetAuthor(ctx, id)
+	if err != nil {
+		if errors.Is(err, ErrUserNotFound) {
+			return nil, ErrUserNotFound
+		}
+		return nil, fmt.Errorf("UserUseCase - getAuthorFromStorage - r.storage.GetAuthor: %w", err)
+	}
+	return author, nil
+}
+
+func (u *UserUseCase) GetAuthor(ctx context.Context, id int) (*entities.Author, error) {
+	cackeKey := u.formCacheKey(id)
+	author, err := u.getAuthorFromCache(ctx, cackeKey)
+	if err != nil {
+		if errors.Is(err, common.ErrCacheKeyNotFound) {
+			author, err = u.getAuthorFromStorage(ctx, id)
 			if err != nil {
-				return nil, fmt.Errorf("UserUseCase - GetAuthor - u.storage.GetAuthor: %w", err)
+				return nil, fmt.Errorf("UserUseCase - GetAuthor - u.getAuthorFromStorage: %w", err)
 			}
 
-			// Save to cache
 			err = u.cache.Set(ctx, cackeKey, author)
 			if err != nil {
 				return nil, fmt.Errorf("UserUseCase - GetAuthor - u.cache.Set: %w", err)
 			}
 		} else {
-			return nil, fmt.Errorf("UserUseCase - GetAuthor -  u.cache.Get: %w", err)
+			return nil, fmt.Errorf("UserUseCase - GetAuthor -  u.getAuthorFromCache: %w", err)
 		}
 	}
 
 	return author, nil
 }
 
-func (u *UserUseCases) GetByLogin(ctx context.Context, login string) (*entities.User, error) {
+func (u *UserUseCase) GetByLogin(ctx context.Context, login string) (*entities.User, error) {
 	user, err := u.storage.GetByLogin(ctx, login)
 	if err != nil {
 		return nil, fmt.Errorf("UserUseCase - GetByLogin - u.storage.GetByLogin: %w", err)
@@ -139,30 +158,33 @@ func (u *UserUseCases) GetByLogin(ctx context.Context, login string) (*entities.
 	return user, nil
 }
 
-func (u *UserUseCases) Signup(ctx context.Context, user *entities.User) (*http.Cookie, error) {
-	// set default icon
+func (u *UserUseCase) hashPassword(password string) (string, error) {
+	cryptPass, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", fmt.Errorf("UserUseCase - hashPassword - bcrypt.GenerateFromPassword: %w", err)
+	}
+	return string(cryptPass), nil
+}
+
+func (u *UserUseCase) Signup(ctx context.Context, user *entities.User) (*http.Cookie, error) {
 	user.IconURL = u.defaultIconUrl
 
-	// Hash password
-	cryptPass, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	var err error
+	user.Password, err = u.hashPassword(user.Password)
 	if err != nil {
-		return nil, fmt.Errorf("UserUseCase - Signup - GeneratePassword: %w", err)
+		return nil, fmt.Errorf("UserUseCase - Signup - u.hashPassword: %w", err)
 	}
-	user.Password = string(cryptPass)
 
-	// Save to storage
 	id, err := u.storage.Create(ctx, user)
 	if err != nil {
 		return nil, fmt.Errorf("UserUseCase - Signup - u.storage.Create: %w", err)
 	}
 
-	// Create session
 	sess, err := u.sessionManager.Create(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("UserUseCase - Signup - u.sessionManager.Create: %w", err)
 	}
 
-	// set cookie
 	cookie := &http.Cookie{
 		Name:    "session_id",
 		Value:   sess.ID,
@@ -173,35 +195,39 @@ func (u *UserUseCases) Signup(ctx context.Context, user *entities.User) (*http.C
 	return cookie, nil
 }
 
-func (u *UserUseCases) Signin(ctx context.Context, user *entities.UserLogin) (*http.Cookie, string, error) {
-	// Get db user
-	var dbUser *entities.User
+func (u *UserUseCase) comparePasswords(first, second string) error {
+	err := bcrypt.CompareHashAndPassword([]byte(first), []byte(second))
+	if err != nil {
+		return ErrUserWrongPassword
+	}
+	return nil
+}
+
+func (u *UserUseCase) Signin(ctx context.Context, params *entities.UserLogin) (*http.Cookie, string, error) {
+	var user *entities.User
 	var err error
-	if user.Login != "" {
-		dbUser, err = u.storage.GetByLogin(ctx, user.Login)
+	if params.Login != "" {
+		user, err = u.GetByLogin(ctx, params.Login)
 		if err != nil {
-			return nil, "", fmt.Errorf("UserUseCase - Signin - u.storage.GetByLogin: %w", err)
+			return nil, "", fmt.Errorf("UserUseCase - Signin - u.GetByLogin: %w", err)
 		}
-	} else if user.Email != "" {
-		dbUser, err = u.storage.GetByEmail(ctx, user.Email)
+	} else if params.Email != "" {
+		user, err = u.storage.GetByEmail(ctx, params.Email)
 		if err != nil {
 			return nil, "", fmt.Errorf("UserUseCase - Signin - u.storage.GetByEmail: %w", err)
 		}
 	}
 
-	// Check passwords
-	err = bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(user.Password))
+	err = u.comparePasswords(user.Password, params.Password)
 	if err != nil {
-		return nil, "", ErrUserWrongPassword
+		return nil, "", err
 	}
 
-	// Create session
-	sess, err := u.sessionManager.Create(ctx, dbUser.ID)
+	sess, err := u.sessionManager.Create(ctx, user.ID)
 	if err != nil {
 		return nil, "", fmt.Errorf("UserUseCase - Signin - u.sessionManager.Create: %w", err)
 	}
 
-	// set cookie
 	cookie := &http.Cookie{
 		Name:    "session_id",
 		Value:   sess.ID,
@@ -209,13 +235,13 @@ func (u *UserUseCases) Signin(ctx context.Context, user *entities.UserLogin) (*h
 		Path:    "/",
 	}
 
-	return cookie, dbUser.Login, nil
+	return cookie, user.Login, nil
 }
 
-func (u *UserUseCases) Logout(ctx *gin.Context) (*http.Cookie, error) {
+func (u *UserUseCase) Logout(ctx *gin.Context) (*http.Cookie, error) {
 	err := u.sessionManager.DestroySession(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("UserUseCase - Logout - u.sessionManager.DestroyByUserID: %w", err)
+		return nil, fmt.Errorf("UserUseCase - Logout - u.sessionManager.DestroySession: %w", err)
 	}
 
 	cookie := &http.Cookie{
@@ -228,121 +254,76 @@ func (u *UserUseCases) Logout(ctx *gin.Context) (*http.Cookie, error) {
 	return cookie, nil
 }
 
-func (u *UserUseCases) Update(gc *gin.Context, login string, user *entities.UserUpdate, r *http.Request) (string, error) {
-	ctx := gc.Request.Context()
-	// Get user from db
-	dbUser, err := u.storage.GetByLogin(ctx, login)
+func (u *UserUseCase) Update(ctx context.Context, login string, ownerID int, params *entities.UserUpdate) (string, error) {
+	user, err := u.GetByLogin(ctx, login)
 	if err != nil {
-		return "", fmt.Errorf("UserUseCase - Update - u.storage.GetByLogin: %w", err)
+		return "", fmt.Errorf("UserUseCase - Update - u.GetByLogin: %w", err)
 	}
 
-	// Get session
-	sess, err := u.sessionManager.GetSession(r)
-	if err != nil {
-		return "", fmt.Errorf("UserUseCase - Update - u.sessionManager.GetSession: %w", err)
-	}
-
-	// Check who update user
-	if sess.UserID != dbUser.ID {
+	if !common.HavePermisson(ownerID, user.ID) {
 		return "", common.ErrNoPermissions
 	}
 
-	// Icon
-	user.IconURL = dbUser.IconURL
-	fileHeader, err := gc.FormFile("icon")
+	params.UpdateValues(user)
+
 	oldIconUrl := ""
-	if fileHeader != nil {
-		if err != nil {
-			return "", fmt.Errorf("UserUseCase - Update - r.FormFile('icon'): %w", err)
-		}
-		if !strings.Contains(fileHeader.Header.Get("Content-Type"), "image") {
-			return "", ErrUserNotImage
-		}
-
-		// save file to storage
-		file, err := fileHeader.Open()
-		if err != nil {
-			return "", fmt.Errorf("UserUseCase - Update - file.Open(): %w", err)
-		}
-		defer file.Close()
-
-		url, err := u.fileStorage.Save(file, "image/jpeg")
+	if params.Icon != nil {
+		url, err := u.fileStorage.Save([]io.ReadSeeker{params.Icon}, "image/jpeg")
 		if err != nil {
 			return "", fmt.Errorf("UserUseCase - Update - u.fileStorage.Save: %w", err)
 		}
-		oldIconUrl = dbUser.IconURL
+		oldIconUrl = user.IconURL
 		user.IconURL = url
 	}
 
-	// Replace empty values
-	if user.Email == "" {
-		user.Email = dbUser.Email
-	}
-	if user.Login == "" {
-		user.Login = dbUser.Login
-	}
-
-	// Save to storage
-	err = u.storage.Update(ctx, dbUser.ID, user)
+	err = u.storage.Update(ctx, user)
 	if err != nil {
-		// Remove new icon
-		imgerr := u.fileStorage.Remove(user.IconURL)
-		if imgerr != nil {
-			return "", fmt.Errorf("UserUseCase - Update - u.storage.Update: %w; UserUseCase - Update - u.fileStorage.Remove(user.Icon_URL): %w", err, imgerr)
+		storageErr := fmt.Errorf("UserUseCase - Update - u.storage.Update: %w", err)
+
+		err := u.fileStorage.Remove(user.IconURL)
+		if err != nil {
+			return "", fmt.Errorf("%w; UserUseCase - Update - u.fileStorage.Remove: %w", storageErr, err)
 		}
+
 		return "", fmt.Errorf("UserUseCase - Update - u.storage.Update: %w", err)
 	}
 
-	// Delete author from cache
-	_, err = u.cache.Del(ctx, fmt.Sprintf("author:%v", dbUser.ID))
+	_, err = u.cache.Del(ctx, u.formCacheKey(user.ID))
 	if err != nil {
 		return "", fmt.Errorf("UserUseCase - Update - u.cache.Del: %w", err)
 	}
 
-	// Remove old icon if exist
 	if oldIconUrl != "" {
 		err = u.fileStorage.Remove(oldIconUrl)
 		if err != nil {
-			return "", fmt.Errorf("UserUseCase - Update - u.fileStorage.Remove(oldIconUrl): %w", err)
+			return "", fmt.Errorf("UserUseCase - Update - u.fileStorage.Remove: %w", err)
 		}
 	}
 
 	return user.Login, nil
 }
 
-func (u *UserUseCases) UpdatePassword(ctx context.Context, login string, user *entities.UserPasswordUpdate, r *http.Request) error {
-	// Get user from db
-	dbUser, err := u.storage.GetByLogin(ctx, login)
+func (u *UserUseCase) UpdatePassword(ctx context.Context, login string, ownerID int, params *entities.UserPasswordUpdate) error {
+	user, err := u.GetByLogin(ctx, login)
 	if err != nil {
-		return fmt.Errorf("UserUseCase - UpdatePassword - u.storage.GetByLogin: %w", err)
+		return fmt.Errorf("UserUseCase - UpdatePassword - u.GetByLogin: %w", err)
 	}
 
-	// Get session
-	sess, err := u.sessionManager.GetSession(r)
-	if err != nil {
-		return fmt.Errorf("UserUseCase - UpdatePassword - u.sessionManager.GetSession: %w", err)
-	}
-
-	// Check who update user
-	if sess.UserID != dbUser.ID {
+	if !common.HavePermisson(ownerID, user.ID) {
 		return common.ErrNoPermissions
 	}
 
-	// Hash password
-	cryptPass, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	user.Password, err = u.hashPassword(params.Password)
 	if err != nil {
-		return fmt.Errorf("UserUseCase - UpdatePassword - GenerateFromPassword: %w", err)
+		return fmt.Errorf("UserUseCase - UpdatePassword - u.hashPassword: %w", err)
 	}
-	user.Password = string(cryptPass)
 
-	// Save to storage
-	err = u.storage.UpdatePassword(ctx, dbUser.ID, user)
+	err = u.storage.UpdatePassword(ctx, user)
 	if err != nil {
 		return fmt.Errorf("UserUseCase - UpdatePassword - u.storage.UpdatePassword: %w", err)
 	}
 
-	// Destroy all sessions
-	err = u.sessionManager.DestroyAllSessions(ctx, dbUser.ID)
+	err = u.sessionManager.DestroyAllSessions(ctx, user.ID)
 	if err != nil {
 		return fmt.Errorf("UserUseCase - UpdatePassword - u.sessionManager.DestroyAllSessions: %w", err)
 	}
@@ -350,44 +331,32 @@ func (u *UserUseCases) UpdatePassword(ctx context.Context, login string, user *e
 	return nil
 }
 
-func (u *UserUseCases) Get(gc *gin.Context, login string) (*entities.UserInfo, error) {
-	r := gc.Request
-	ctx := gc.Request.Context()
-	// Get user from db
-	dbUser, err := u.storage.GetByLogin(ctx, login)
+func (u *UserUseCase) Get(ctx context.Context, login string, ownerID int, authorized bool) (*entities.UserInfo, error) {
+	user, err := u.GetByLogin(ctx, login)
 	if err != nil {
-		if errors.Is(err, ErrUserNotFound) {
-			return nil, ErrUserNotFound
-		}
-		return nil, fmt.Errorf("UserUseCase - Get - u.storage.GetByLogin: %w", err)
+		return nil, fmt.Errorf("UserUseCase - Get - u.GetByLogin: %w", err)
 	}
 
-	// Parse to new structure
 	userInfo := &entities.UserInfo{}
-	userInfo.ID = dbUser.ID
-	userInfo.Login = dbUser.Login
-	userInfo.About = dbUser.About
-	userInfo.IconURL = dbUser.IconURL
-	userInfo.CreatedAt = dbUser.CreatedAt
+	userInfo.ID = user.ID
+	userInfo.Login = user.Login
+	userInfo.About = user.About
+	userInfo.IconURL = user.IconURL
+	userInfo.CreatedAt = user.CreatedAt
 
-	// Get session
-	sess, err := u.sessionManager.GetSession(r)
-	if err == nil {
-		// Check who get user
-		if sess.UserID == userInfo.ID {
-			// Get liked recipes
-			//likedRecipes, err := u.likeUseCases.GetLikedRecipies(r.Context(), userInfo.ID)
+	if authorized {
+		if common.HavePermisson(ownerID, user.ID) {
+			likedRecipes, err := u.likeUseCase.GetLikedRecipies(ctx, userInfo.ID)
 			if err != nil {
 				return nil, fmt.Errorf("UserUseCase - Get - u.likeUseCases.GetLikedRecipies: %w", err)
 			}
-			//userInfo.LikedRecipies = likedRecipes
+			userInfo.LikedRecipies = likedRecipes
 		}
 	}
 
-	// Get user recipies
-	recipies, err := u.storage.GetRecipes(r.Context(), userInfo.ID)
+	recipies, err := u.storage.GetRecipes(ctx, userInfo.ID)
 	if err != nil {
-		return nil, fmt.Errorf("UserUseCase - Get - u.recipeUsecases.GetAllByUserID: %w", err)
+		return nil, fmt.Errorf("UserUseCase - Get - u.storage.GetRecipes: %w", err)
 	}
 	userInfo.Recipies = recipies
 

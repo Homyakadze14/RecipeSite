@@ -174,10 +174,10 @@ func (r *recipeRoutes) getPhotos(c *gin.Context) ([]io.ReadSeeker, error) {
 		}
 
 		file, err := fileHeader.Open()
-		defer file.Close()
 		if err != nil {
 			return nil, err
 		}
+		defer file.Close()
 		photos = append(photos, file)
 	}
 
@@ -262,10 +262,6 @@ func (r *recipeRoutes) create(c *gin.Context) {
 		}
 		if errors.Is(err, usecases.ErrEmptyPhotos) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrEmptyPhotos.Error()})
-			return
-		}
-		if errors.Is(err, usecases.ErrUserNotImage) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrUserNotImage.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
@@ -361,10 +357,6 @@ func (r *recipeRoutes) update(c *gin.Context) {
 		}
 		if errors.Is(err, common.ErrNoPermissions) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrNoPermissions.Error()})
-			return
-		}
-		if errors.Is(err, usecases.ErrUserNotImage) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrUserNotImage.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})

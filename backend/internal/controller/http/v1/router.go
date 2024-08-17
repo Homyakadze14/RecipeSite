@@ -22,7 +22,7 @@ import (
 // @BasePath    /api/v1
 func NewRouter(handler *gin.Engine,
 	sess *usecases.SessionUseCase,
-	user *usecases.UserUseCases,
+	user *usecases.UserUseCase,
 	like *usecases.LikeUseCase,
 	recipe *usecases.RecipeUseCases,
 	comment *usecases.CommentUseCase,

@@ -2,6 +2,7 @@ package v1
 
 import (
 	"errors"
+	"io"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -17,11 +18,11 @@ var (
 )
 
 type userRoutes struct {
-	u  *usecases.UserUseCases
+	u  *usecases.UserUseCase
 	su *usecases.SessionUseCase
 }
 
-func NewUserRoutes(handler *gin.RouterGroup, u *usecases.UserUseCases, su *usecases.SessionUseCase) {
+func NewUserRoutes(handler *gin.RouterGroup, u *usecases.UserUseCase, su *usecases.SessionUseCase) {
 	r := &userRoutes{u, su}
 
 	h := handler.Group("/auth")
@@ -61,10 +62,17 @@ func NewUserRoutes(handler *gin.RouterGroup, u *usecases.UserUseCases, su *useca
 // @Failure     500
 // @Router      /auth/tgtoken [get]
 func (r *userRoutes) tgToken(c *gin.Context) {
-	token, err := r.u.GenerateJWT(c.Request)
+	sess, err := r.su.SessionFromContext(c)
 	if err != nil {
 		slog.Error(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
+		return
+	}
+
+	token, err := r.u.GenerateJWT(sess.UserID)
+	if err != nil {
+		slog.Error(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 		return
 	}
 
@@ -98,7 +106,7 @@ func (r *userRoutes) checkTGToken(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 		return
 	}
 
@@ -131,7 +139,7 @@ func (r *userRoutes) signup(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrUserUnique.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 		return
 	}
 
@@ -151,21 +159,21 @@ func (r *userRoutes) signup(c *gin.Context) {
 // @Failure     500
 // @Router      /auth/signin [post]
 func (r *userRoutes) signin(c *gin.Context) {
-	var user *entities.UserLogin
-	if err := c.ShouldBindJSON(&user); err != nil {
+	var params *entities.UserLogin
+	if err := c.ShouldBindJSON(&params); err != nil {
 		slog.Error(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": common.GetErrMessages(err).Error()})
 		return
 	}
 
-	if user.Login == "" && user.Email == "" {
+	if params.Login == "" && params.Email == "" {
 		errMes := "login or email must be provide"
 		slog.Error(errMes)
 		c.JSON(http.StatusBadRequest, gin.H{"error": errMes})
 		return
 	}
 
-	cookie, login, err := r.u.Signin(c.Request.Context(), user)
+	cookie, login, err := r.u.Signin(c.Request.Context(), params)
 	if err != nil {
 		slog.Error(err.Error())
 		if errors.Is(err, usecases.ErrUserNotFound) {
@@ -176,7 +184,7 @@ func (r *userRoutes) signin(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrUserWrongPassword.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 		return
 	}
 
@@ -198,12 +206,41 @@ func (r *userRoutes) logout(c *gin.Context) {
 	cookie, err := r.u.Logout(c)
 	if err != nil {
 		slog.Error(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 		return
 	}
 
 	http.SetCookie(c.Writer, cookie)
 	c.JSON(http.StatusOK, gin.H{"status": "you are logout"})
+}
+
+func (r *userRoutes) getIcon(c *gin.Context) (io.ReadSeeker, error) {
+	err := c.Request.ParseMultipartForm(maxFilesSize)
+	if err != nil {
+		return nil, common.ErrHudgeFiles
+	}
+
+	fileHeader, err := c.FormFile("icon")
+
+	if fileHeader == nil {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !strings.Contains(fileHeader.Header.Get("Content-Type"), "image") {
+		return nil, common.ErrImageType
+	}
+
+	file, err := fileHeader.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	return file, nil
 }
 
 // @Summary     Update user
@@ -228,33 +265,44 @@ func (r *userRoutes) update(c *gin.Context) {
 		return
 	}
 
-	// Get user login
 	login, ok := c.Params.Get("login")
 	if !ok {
-		errLogin := "Login must be provided in url"
-		slog.Error(errLogin)
-		c.JSON(http.StatusBadRequest, gin.H{"error": errLogin})
+		slog.Error(common.ErrLoginProvided.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrLoginProvided.Error()})
 		return
 	}
 
-	// Check file size
-	err := c.Request.ParseMultipartForm(10 << 20)
-	if err != nil {
-		slog.Error(err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": "file is too huge"})
-		return
-	}
-
-	// Parse form values to user
-	user := &entities.UserUpdate{}
-	if err := c.Bind(&user); err != nil {
+	params := &entities.UserUpdate{}
+	if err := c.Bind(&params); err != nil {
 		slog.Error(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": common.GetErrMessages(err).Error()})
 		return
 	}
 
-	// Update
-	login, err = r.u.Update(c, login, user, c.Request)
+	var err error
+	params.Icon, err = r.getIcon(c)
+	if err != nil {
+		slog.Error(err.Error())
+		if errors.Is(err, common.ErrHudgeFiles) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrHudgeFiles.Error()})
+			return
+		}
+		if errors.Is(err, common.ErrImageType) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrImageType.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
+		return
+	}
+
+	sess, err := r.su.SessionFromContext(c)
+	if err != nil {
+		slog.Error(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
+		return
+	}
+
+	login, err = r.u.Update(c, login, sess.UserID, params)
 	if err != nil {
 		slog.Error(err.Error())
 		if errors.Is(err, usecases.ErrUserNotFound) {
@@ -269,11 +317,7 @@ func (r *userRoutes) update(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrNoPermissions.Error()})
 			return
 		}
-		if errors.Is(err, usecases.ErrUserNotImage) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": usecases.ErrUserNotImage.Error()})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 		return
 	}
 
@@ -294,25 +338,28 @@ func (r *userRoutes) update(c *gin.Context) {
 // @Failure     500
 // @Router      /user/{login}/password [put]
 func (r *userRoutes) updatePassword(c *gin.Context) {
-	// Get user login
 	login, ok := c.Params.Get("login")
 	if !ok {
-		errLogin := "Login must be provided in url"
-		slog.Error(errLogin)
-		c.JSON(http.StatusBadRequest, gin.H{"error": errLogin})
+		slog.Error(common.ErrLoginProvided.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrLoginProvided.Error()})
 		return
 	}
 
-	// Parse form values to user
-	user := &entities.UserPasswordUpdate{}
-	if err := c.BindJSON(&user); err != nil {
+	params := &entities.UserPasswordUpdate{}
+	if err := c.BindJSON(&params); err != nil {
 		slog.Error(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": common.GetErrMessages(err).Error()})
 		return
 	}
 
-	// Update
-	err := r.u.UpdatePassword(c.Request.Context(), login, user, c.Request)
+	sess, err := r.su.SessionFromContext(c)
+	if err != nil {
+		slog.Error(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
+		return
+	}
+
+	err = r.u.UpdatePassword(c.Request.Context(), login, sess.UserID, params)
 	if err != nil {
 		slog.Error(err.Error())
 		if errors.Is(err, usecases.ErrUserNotFound) {
@@ -340,24 +387,37 @@ func (r *userRoutes) updatePassword(c *gin.Context) {
 // @Failure     500
 // @Router      /user/{login} [get]
 func (r *userRoutes) get(c *gin.Context) {
-	// Get user login
 	login, ok := c.Params.Get("login")
 	if !ok {
-		errLogin := "Login must be provided in url"
-		slog.Error(errLogin)
-		c.JSON(http.StatusBadRequest, gin.H{"error": errLogin})
+		slog.Error(common.ErrLoginProvided.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrLoginProvided.Error()})
 		return
 	}
 
-	// Get user
-	user, err := r.u.Get(c, login)
+	sess, err := r.su.GetSession(c.Request)
+	authorized := true
+	userID := 0
+	if err != nil {
+		if !errors.Is(err, usecases.ErrUnauth) {
+			slog.Error(err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
+			return
+		}
+		authorized = false
+	}
+
+	if authorized {
+		userID = sess.UserID
+	}
+
+	user, err := r.u.Get(c, login, userID, authorized)
 	if err != nil {
 		slog.Error(err.Error())
 		if errors.Is(err, usecases.ErrUserNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": usecases.ErrUserNotFound.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 		return
 	}
 

@@ -73,9 +73,9 @@ func (r *UserRepo) GetAuthor(ctx context.Context, id int) (*entities.Author, err
 	return usr, nil
 }
 
-func (r *UserRepo) Update(ctx context.Context, id int, user *entities.UserUpdate) error {
+func (r *UserRepo) Update(ctx context.Context, user *entities.User) error {
 	_, err := r.Pool.Exec(ctx, "UPDATE users SET email=$1, login=$2, icon_url=$3, about=$4 WHERE id=$5",
-		user.Email, user.Login, user.IconURL, user.About, id)
+		user.Email, user.Login, user.IconURL, user.About, user.ID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "повторяющееся значение ключа") {
@@ -86,9 +86,9 @@ func (r *UserRepo) Update(ctx context.Context, id int, user *entities.UserUpdate
 	return nil
 }
 
-func (r *UserRepo) UpdatePassword(ctx context.Context, id int, user *entities.UserPasswordUpdate) error {
+func (r *UserRepo) UpdatePassword(ctx context.Context, user *entities.User) error {
 	_, err := r.Pool.Exec(ctx, "UPDATE users SET password=$1 WHERE id=$2",
-		user.Password, id)
+		user.Password, user.ID)
 	if err != nil {
 		return fmt.Errorf("UserRepo - UpdatePassword - r.Pool.Exec: %w", err)
 	}

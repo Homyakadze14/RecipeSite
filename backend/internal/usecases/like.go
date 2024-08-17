@@ -18,6 +18,7 @@ type likeStorage interface {
 	LikesCount(ctx context.Context, recipeID int) (int, error)
 	Like(ctx context.Context, like *entities.Like) error
 	Unlike(ctx context.Context, like *entities.Like) error
+	GetLikedRecipies(ctx context.Context, userID int) ([]entities.Recipe, error)
 }
 
 type LikeUseCase struct {
@@ -100,4 +101,8 @@ func (u *LikeUseCase) Unlike(ctx context.Context, like *entities.Like) error {
 	}
 
 	return nil
+}
+
+func (u *LikeUseCase) GetLikedRecipies(ctx context.Context, userID int) ([]entities.Recipe, error) {
+	return u.storage.GetLikedRecipies(ctx, userID)
 }
