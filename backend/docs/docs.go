@@ -463,86 +463,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/user/subscribe": {
-            "post": {
-                "description": "Subscribe to user",
-                "produces": [
-                    "application/json",
-                    "application/json"
-                ],
-                "tags": [
-                    "subscription"
-                ],
-                "summary": "Subscribe to user",
-                "operationId": "subscribe to user",
-                "parameters": [
-                    {
-                        "description": "User id to whom we subscribe",
-                        "name": "creator",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/entities.SubscribeCreator"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    },
-                    "400": {
-                        "description": "Bad Request"
-                    },
-                    "401": {
-                        "description": "Unauthorized"
-                    },
-                    "500": {
-                        "description": "Internal Server Error"
-                    }
-                }
-            }
-        },
-        "/user/unsubscribe": {
-            "post": {
-                "description": "Unsubscribe from user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "subscription"
-                ],
-                "summary": "Unsubscribe from user",
-                "operationId": "unsubscribe from user",
-                "parameters": [
-                    {
-                        "description": "User id to whom we unsubscribe",
-                        "name": "creator",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/entities.SubscribeCreator"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    },
-                    "400": {
-                        "description": "Bad Request"
-                    },
-                    "401": {
-                        "description": "Unauthorized"
-                    },
-                    "500": {
-                        "description": "Internal Server Error"
-                    }
-                }
-            }
-        },
         "/user/{login}": {
             "get": {
                 "description": "Get user info",
@@ -856,6 +776,60 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/user/{login}/subscribe": {
+            "post": {
+                "description": "Subscribe to user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscription"
+                ],
+                "summary": "Subscribe to user",
+                "operationId": "subscribe to user",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/user/{login}/unsubscribe": {
+            "post": {
+                "description": "Unsubscribe from user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscription"
+                ],
+                "summary": "Unsubscribe from user",
+                "operationId": "unsubscribe from user",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1079,17 +1053,6 @@ const docTemplate = `{
             "properties": {
                 "info": {
                     "$ref": "#/definitions/entities.FullRecipe"
-                }
-            }
-        },
-        "entities.SubscribeCreator": {
-            "type": "object",
-            "required": [
-                "creator_id"
-            ],
-            "properties": {
-                "creator_id": {
-                    "type": "integer"
                 }
             }
         },

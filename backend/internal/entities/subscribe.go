@@ -1,6 +1,7 @@
 package entities
 
 type SubscribeInfo struct {
+	CreatorLogin string
 	CreatorID    int
 	SubscriberID int
 }

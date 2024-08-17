@@ -19,7 +19,7 @@ type subscribeRoutes struct {
 func NewSubscribeRoutes(handler *gin.RouterGroup, u *usecases.SubscribeUseCases, su *usecases.SessionUseCase) {
 	r := &subscribeRoutes{u, su}
 
-	sb := handler.Group("/user")
+	sb := handler.Group("/user/:login")
 	{
 		sb.Use(su.Auth())
 		sb.POST("/subscribe", r.subscribe)
@@ -32,18 +32,16 @@ func NewSubscribeRoutes(handler *gin.RouterGroup, u *usecases.SubscribeUseCases,
 // @ID          subscribe to user
 // @Tags  	    subscription
 // @Produce     json
-// @Param 		creator body entities.SubscribeCreator  true  "User id to whom we subscribe"
-// @Produce     json
 // @Success     200
 // @Failure     400
 // @Failure     401
 // @Failure     500
-// @Router      /user/subscribe [post]
+// @Router      /user/{login}/subscribe [post]
 func (r *subscribeRoutes) subscribe(c *gin.Context) {
-	var creator *entities.SubscribeCreator
-	if err := c.ShouldBindJSON(&creator); err != nil {
-		slog.Error(err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": common.GetErrMessages(err).Error()})
+	login, ok := c.Params.Get("login")
+	if !ok {
+		slog.Error(common.ErrLoginProvided.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrLoginProvided.Error()})
 		return
 	}
 
@@ -55,7 +53,7 @@ func (r *subscribeRoutes) subscribe(c *gin.Context) {
 	}
 
 	info := &entities.SubscribeInfo{
-		CreatorID:    creator.ID,
+		CreatorLogin: login,
 		SubscriberID: sess.UserID,
 	}
 
@@ -86,18 +84,16 @@ func (r *subscribeRoutes) subscribe(c *gin.Context) {
 // @ID          unsubscribe from user
 // @Tags  	    subscription
 // @Produce     json
-// @Param 		creator body entities.SubscribeCreator  true  "User id to whom we unsubscribe"
-// @Accept      json
 // @Success     200
 // @Failure     400
 // @Failure     401
 // @Failure     500
-// @Router      /user/unsubscribe [post]
+// @Router      /user/{login}/unsubscribe [post]
 func (r *subscribeRoutes) unsubscribe(c *gin.Context) {
-	var creator *entities.SubscribeCreator
-	if err := c.ShouldBindJSON(&creator); err != nil {
-		slog.Error(err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": common.GetErrMessages(err).Error()})
+	login, ok := c.Params.Get("login")
+	if !ok {
+		slog.Error(common.ErrLoginProvided.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrLoginProvided.Error()})
 		return
 	}
 
@@ -109,7 +105,7 @@ func (r *subscribeRoutes) unsubscribe(c *gin.Context) {
 	}
 
 	info := &entities.SubscribeInfo{
-		CreatorID:    creator.ID,
+		CreatorLogin: login,
 		SubscriberID: sess.UserID,
 	}
 
