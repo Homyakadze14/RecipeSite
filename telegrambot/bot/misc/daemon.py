@@ -7,7 +7,7 @@ from aiogram.utils.markdown import link
 
 def get_post_info(id):
     try:
-        url = environ.get("BACKEND_BASE_URL") + f"/recipe/{id}"
+        url = environ.get("RECIPE_URL") + f"{id}"
         r = requests.get(url)
         if r.status_code == 200:
             recipe = r.json()['info']['recipe']
