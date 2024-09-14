@@ -539,9 +539,6 @@ paths:
         name: about
         type: string
       - in: formData
-        name: email
-        type: string
-      - in: formData
         maxLength: 20
         minLength: 3
         name: login

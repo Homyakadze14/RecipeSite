@@ -516,11 +516,6 @@ const docTemplate = `{
                         "in": "formData"
                     },
                     {
-                        "type": "string",
-                        "name": "email",
-                        "in": "formData"
-                    },
-                    {
                         "maxLength": 20,
                         "minLength": 3,
                         "type": "string",

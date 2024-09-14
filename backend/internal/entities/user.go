@@ -35,16 +35,12 @@ type Author struct {
 }
 
 type UserUpdate struct {
-	Email string        `json:"email" binding:"omitempty,email" form:"email"`
 	Login string        `json:"login" binding:"omitempty,min=3,max=20" form:"login"`
 	About string        `json:"about" binding:"omitempty,max=1500" form:"about"`
 	Icon  io.ReadSeeker `json:"-"`
 }
 
 func (u *UserUpdate) UpdateValues(user *User) {
-	if u.Email != "" {
-		user.Email = u.Email
-	}
 	if u.Login != "" {
 		user.Login = u.Login
 	}
