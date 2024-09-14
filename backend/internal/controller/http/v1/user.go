@@ -120,7 +120,7 @@ func (r *userRoutes) checkTGToken(c *gin.Context) {
 // @Param 		user body entities.UserLogin  true  "User params"
 // @Accept      json
 // @Produce     json
-// @Success     200
+// @Success     200 {string} string "login"
 // @Failure     400
 // @Failure     500
 // @Router      /auth/signup [post]
@@ -132,7 +132,7 @@ func (r *userRoutes) signup(c *gin.Context) {
 		return
 	}
 
-	cookie, err := r.u.Signup(c.Request.Context(), user)
+	cookie, login, err := r.u.Signup(c.Request.Context(), user)
 	if err != nil {
 		slog.Error(err.Error())
 		if errors.Is(err, usecases.ErrUserUnique) {
@@ -144,7 +144,7 @@ func (r *userRoutes) signup(c *gin.Context) {
 	}
 
 	http.SetCookie(c.Writer, cookie)
-	c.JSON(http.StatusOK, gin.H{"status": "you are signed up"})
+	c.JSON(http.StatusOK, gin.H{"login": login})
 }
 
 // @Summary     Sign in

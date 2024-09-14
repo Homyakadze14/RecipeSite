@@ -166,23 +166,23 @@ func (u *UserUseCase) hashPassword(password string) (string, error) {
 	return string(cryptPass), nil
 }
 
-func (u *UserUseCase) Signup(ctx context.Context, user *entities.User) (*http.Cookie, error) {
+func (u *UserUseCase) Signup(ctx context.Context, user *entities.User) (*http.Cookie, string, error) {
 	user.IconURL = u.defaultIconUrl
 
 	var err error
 	user.Password, err = u.hashPassword(user.Password)
 	if err != nil {
-		return nil, fmt.Errorf("UserUseCase - Signup - u.hashPassword: %w", err)
+		return nil, "", fmt.Errorf("UserUseCase - Signup - u.hashPassword: %w", err)
 	}
 
 	id, err := u.storage.Create(ctx, user)
 	if err != nil {
-		return nil, fmt.Errorf("UserUseCase - Signup - u.storage.Create: %w", err)
+		return nil, "", fmt.Errorf("UserUseCase - Signup - u.storage.Create: %w", err)
 	}
 
 	sess, err := u.sessionManager.Create(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("UserUseCase - Signup - u.sessionManager.Create: %w", err)
+		return nil, "", fmt.Errorf("UserUseCase - Signup - u.sessionManager.Create: %w", err)
 	}
 
 	cookie := &http.Cookie{
@@ -192,7 +192,7 @@ func (u *UserUseCase) Signup(ctx context.Context, user *entities.User) (*http.Co
 		Path:    "/",
 	}
 
-	return cookie, nil
+	return cookie, user.Login, nil
 }
 
 func (u *UserUseCase) comparePasswords(first, second string) error {
