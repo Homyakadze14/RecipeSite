@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS recipes(
     complexitiy int NOT NULL,
     need_time VARCHAR(20) NOT NULL,
     ingridients VARCHAR(1500) NOT NULL,
+    instructions VARCHAR(2000) NOT NULL,
     photos_urls TEXT NOT NULL,
     created_at TIMESTAMP,
     updated_at TIMESTAMP

@@ -631,6 +631,13 @@
                         "required": true
                     },
                     {
+                        "maxLength": 2000,
+                        "type": "string",
+                        "name": "instructions",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
                         "type": "string",
                         "name": "need_time",
                         "in": "formData",
@@ -705,6 +712,13 @@
                         "type": "string",
                         "name": "ingridients",
                         "in": "formData"
+                    },
+                    {
+                        "maxLength": 2000,
+                        "type": "string",
+                        "name": "instructions",
+                        "in": "formData",
+                        "required": true
                     },
                     {
                         "type": "string",
@@ -953,6 +967,7 @@
                 "about",
                 "complexitiy",
                 "ingridients",
+                "instructions",
                 "need_time",
                 "title"
             ],
@@ -983,6 +998,10 @@
                 "ingridients": {
                     "type": "string",
                     "maxLength": 1500
+                },
+                "instructions": {
+                    "type": "string",
+                    "maxLength": 2000
                 },
                 "need_time": {
                     "type": "string"

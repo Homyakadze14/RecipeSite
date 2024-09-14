@@ -105,6 +105,9 @@ definitions:
       ingridients:
         maxLength: 1500
         type: string
+      instructions:
+        maxLength: 2000
+        type: string
       need_time:
         type: string
       photos_urls:
@@ -119,6 +122,7 @@ definitions:
     - about
     - complexitiy
     - ingridients
+    - instructions
     - need_time
     - title
     type: object
@@ -621,6 +625,11 @@ paths:
         required: true
         type: string
       - in: formData
+        maxLength: 2000
+        name: instructions
+        required: true
+        type: string
+      - in: formData
         name: need_time
         required: true
         type: string
@@ -690,6 +699,11 @@ paths:
       - in: formData
         maxLength: 1500
         name: ingridients
+        type: string
+      - in: formData
+        maxLength: 2000
+        name: instructions
+        required: true
         type: string
       - in: formData
         name: need_time

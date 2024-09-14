@@ -637,6 +637,13 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "maxLength": 2000,
+                        "type": "string",
+                        "name": "instructions",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
                         "type": "string",
                         "name": "need_time",
                         "in": "formData",
@@ -711,6 +718,13 @@ const docTemplate = `{
                         "type": "string",
                         "name": "ingridients",
                         "in": "formData"
+                    },
+                    {
+                        "maxLength": 2000,
+                        "type": "string",
+                        "name": "instructions",
+                        "in": "formData",
+                        "required": true
                     },
                     {
                         "type": "string",
@@ -959,6 +973,7 @@ const docTemplate = `{
                 "about",
                 "complexitiy",
                 "ingridients",
+                "instructions",
                 "need_time",
                 "title"
             ],
@@ -989,6 +1004,10 @@ const docTemplate = `{
                 "ingridients": {
                     "type": "string",
                     "maxLength": 1500
+                },
+                "instructions": {
+                    "type": "string",
+                    "maxLength": 2000
                 },
                 "need_time": {
                     "type": "string"

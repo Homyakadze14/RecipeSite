@@ -40,7 +40,7 @@ func (r *RecipeRepo) GetAll(ctx context.Context) ([]entities.Recipe, error) {
 	for rows.Next() {
 		var recipe entities.Recipe
 		err := rows.Scan(&recipe.ID, &recipe.UserID, &recipe.Title, &recipe.About,
-			&recipe.Complexitiy, &recipe.NeedTime, &recipe.Ingridients,
+			&recipe.Complexitiy, &recipe.NeedTime, &recipe.Ingridients, &recipe.Instructions,
 			&recipe.PhotosUrls, &recipe.CreatedAt, &recipe.UpdatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("RecipeRepo - GetAll - rows.Scan: %w", err)
@@ -56,7 +56,7 @@ func (r *RecipeRepo) GetFiltered(ctx context.Context, filter *entities.RecipeFil
 	params := make([]interface{}, 0, 5)
 
 	params = append(params, filter.Query)
-	request.WriteString("SELECT * FROM recipes WHERE title LIKE '%'||$1||'%' OR about LIKE '%'||$1||'%' OR ingridients LIKE '%'||$1||'%'")
+	request.WriteString("SELECT * FROM recipes WHERE title LIKE '%'||$1||'%' OR about LIKE '%'||$1||'%' OR ingridients LIKE '%'||$1||'%' OR instructions LIKE '%'||$1||'%'")
 
 	allowOrderFields := []string{"", "title", "complexitiy", "updated_at"}
 	if slices.Contains(allowOrderFields, filter.OrderField) {
@@ -94,7 +94,7 @@ func (r *RecipeRepo) GetFiltered(ctx context.Context, filter *entities.RecipeFil
 	for rows.Next() {
 		var recipe entities.Recipe
 		err := rows.Scan(&recipe.ID, &recipe.UserID, &recipe.Title, &recipe.About,
-			&recipe.Complexitiy, &recipe.NeedTime, &recipe.Ingridients,
+			&recipe.Complexitiy, &recipe.NeedTime, &recipe.Ingridients, &recipe.Instructions,
 			&recipe.PhotosUrls, &recipe.CreatedAt, &recipe.UpdatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("RecipeRepo - GetFiltered - rows.Scan: %w", err)
@@ -110,7 +110,7 @@ func (r *RecipeRepo) Get(ctx context.Context, id int) (*entities.Recipe, error) 
 
 	recipe := &entities.Recipe{}
 	err := row.Scan(&recipe.ID, &recipe.UserID, &recipe.Title, &recipe.About,
-		&recipe.Complexitiy, &recipe.NeedTime, &recipe.Ingridients,
+		&recipe.Complexitiy, &recipe.NeedTime, &recipe.Ingridients, &recipe.Instructions,
 		&recipe.PhotosUrls, &recipe.CreatedAt, &recipe.UpdatedAt)
 
 	if err != nil {
@@ -124,8 +124,8 @@ func (r *RecipeRepo) Get(ctx context.Context, id int) (*entities.Recipe, error) 
 }
 
 func (r *RecipeRepo) Save(ctx context.Context, recipe *entities.Recipe) (id int, err error) {
-	row := r.Pool.QueryRow(ctx, "INSERT INTO recipes(user_id,title,about,complexitiy,need_time,ingridients,photos_urls,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id",
-		recipe.UserID, recipe.Title, recipe.About, recipe.Complexitiy, recipe.NeedTime, recipe.Ingridients, recipe.PhotosUrls, time.Now(), time.Now())
+	row := r.Pool.QueryRow(ctx, "INSERT INTO recipes(user_id,title,about,complexitiy,need_time,ingridients,instructions,photos_urls,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id",
+		recipe.UserID, recipe.Title, recipe.About, recipe.Complexitiy, recipe.NeedTime, recipe.Ingridients, recipe.Instructions, recipe.PhotosUrls, time.Now(), time.Now())
 
 	err = row.Scan(&id)
 	if err != nil {
@@ -135,9 +135,9 @@ func (r *RecipeRepo) Save(ctx context.Context, recipe *entities.Recipe) (id int,
 }
 
 func (r *RecipeRepo) Update(ctx context.Context, updatedRecipe *entities.Recipe) error {
-	_, err := r.Pool.Exec(ctx, "UPDATE recipes SET title=$1,about=$2,complexitiy=$3,need_time=$4,ingridients=$5,photos_urls=$6,updated_at=$7 WHERE id=$8",
+	_, err := r.Pool.Exec(ctx, "UPDATE recipes SET title=$1,about=$2,complexitiy=$3,need_time=$4,ingridients=$5,photos_urls=$6,updated_at=$7,instructions=$8 WHERE id=$9",
 		updatedRecipe.Title, updatedRecipe.About, updatedRecipe.Complexitiy, updatedRecipe.NeedTime,
-		updatedRecipe.Ingridients, updatedRecipe.PhotosUrls, time.Now(), updatedRecipe.ID)
+		updatedRecipe.Ingridients, updatedRecipe.PhotosUrls, time.Now(), updatedRecipe.Instructions, updatedRecipe.ID)
 
 	if err != nil {
 		return fmt.Errorf("RecipeRepo - Update - r.Pool.Exec: %w", err)
