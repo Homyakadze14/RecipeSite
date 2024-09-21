@@ -159,6 +159,11 @@ definitions:
       info:
         $ref: '#/definitions/entities.FullRecipe'
     type: object
+  entities.UserIcon:
+    properties:
+      icon_url:
+        type: string
+    type: object
   entities.UserInfo:
     properties:
       about:
@@ -565,6 +570,28 @@ paths:
         "500":
           description: Internal Server Error
       summary: Update user
+      tags:
+      - user
+  /user/{login}/icon:
+    get:
+      description: Get user icon
+      operationId: get icon
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.UserIcon'
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Get icon
       tags:
       - user
   /user/{login}/password:

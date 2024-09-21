@@ -40,6 +40,10 @@ type UserUpdate struct {
 	Icon  io.ReadSeeker `json:"-"`
 }
 
+type UserIcon struct {
+	IconURL string `json:"icon_url"`
+}
+
 func (u *UserUpdate) UpdateValues(user *User) {
 	if u.Login != "" {
 		user.Login = u.Login

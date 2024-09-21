@@ -47,6 +47,19 @@ func (r *UserRepo) GetByLogin(ctx context.Context, login string) (*entities.User
 	return usr, nil
 }
 
+func (r *UserRepo) GetIconByLogin(ctx context.Context, login string) (*entities.UserIcon, error) {
+	row := r.Pool.QueryRow(ctx, "SELECT icon_url FROM users WHERE login=$1", login)
+	icn := &entities.UserIcon{}
+	err := row.Scan(&icn.IconURL)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, usecases.ErrUserNotFound
+		}
+		return nil, fmt.Errorf("UserRepo - GetIconByLogin - r.Pool.QueryRow: %w", err)
+	}
+	return icn, nil
+}
+
 func (r *UserRepo) GetByEmail(ctx context.Context, email string) (*entities.User, error) {
 	row := r.Pool.QueryRow(ctx, "SELECT * FROM users WHERE email=$1", email)
 	usr := &entities.User{}

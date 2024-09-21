@@ -22,6 +22,7 @@ type userStorage interface {
 	UpdatePassword(ctx context.Context, user *entities.User) error
 	GetRecipes(ctx context.Context, userID int) ([]entities.Recipe, error)
 	GetAuthor(ctx context.Context, id int) (*entities.Author, error)
+	GetIconByLogin(ctx context.Context, login string) (*entities.UserIcon, error)
 }
 
 type fileStorage interface {
@@ -329,6 +330,15 @@ func (u *UserUseCase) UpdatePassword(ctx context.Context, login string, ownerID 
 	}
 
 	return nil
+}
+
+func (u *UserUseCase) GetIcon(ctx context.Context, login string) (*entities.UserIcon, error) {
+	icn, err := u.storage.GetIconByLogin(ctx, login)
+	if err != nil {
+		return nil, fmt.Errorf("UserUseCase - GetIcon - u.storage.GetIconByLogin: %w", err)
+	}
+
+	return icn, nil
 }
 
 func (u *UserUseCase) Get(ctx context.Context, login string, ownerID int, authorized bool) (*entities.UserInfo, error) {

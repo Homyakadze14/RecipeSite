@@ -44,6 +44,7 @@ func NewUserRoutes(handler *gin.RouterGroup, u *usecases.UserUseCase, su *usecas
 		usr.Use(su.Auth())
 		usr.PUT("/:login", r.update)
 		usr.PUT("/:login/password", r.updatePassword)
+		usr.GET("/:login/icon", r.getDBIcon)
 	}
 
 	us := handler.Group("/user")
@@ -422,4 +423,37 @@ func (r *userRoutes) get(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, entities.JSONUserInfo{User: user})
+}
+
+// @Summary     Get icon
+// @Description Get user icon
+// @ID          get icon
+// @Tags  	    user
+// @Produce     json
+// @Success     200 {object} entities.UserIcon
+// @Failure     400
+// @Failure     401
+// @Failure     404
+// @Failure     500
+// @Router      /user/{login}/icon [get]
+func (r *userRoutes) getDBIcon(c *gin.Context) {
+	login, ok := c.Params.Get("login")
+	if !ok {
+		slog.Error(common.ErrLoginProvided.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.ErrLoginProvided.Error()})
+		return
+	}
+
+	icn, err := r.u.GetIcon(c.Request.Context(), login)
+	if err != nil {
+		slog.Error(err.Error())
+		if errors.Is(err, usecases.ErrUserNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": usecases.ErrUserNotFound.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, icn)
 }

@@ -548,6 +548,39 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/{login}/icon": {
+            "get": {
+                "description": "Get user icon",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Get icon",
+                "operationId": "get icon",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.UserIcon"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/user/{login}/password": {
             "put": {
                 "description": "Update user password",
@@ -1070,6 +1103,14 @@ const docTemplate = `{
             "properties": {
                 "info": {
                     "$ref": "#/definitions/entities.FullRecipe"
+                }
+            }
+        },
+        "entities.UserIcon": {
+            "type": "object",
+            "properties": {
+                "icon_url": {
+                    "type": "string"
                 }
             }
         },
