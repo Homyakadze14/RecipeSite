@@ -661,7 +661,7 @@ const docTemplate = `{
                             3
                         ],
                         "type": "integer",
-                        "name": "complexitiy",
+                        "name": "complexity",
                         "in": "formData",
                         "required": true
                     },
@@ -746,7 +746,7 @@ const docTemplate = `{
                             3
                         ],
                         "type": "integer",
-                        "name": "complexitiy",
+                        "name": "complexity",
                         "in": "formData"
                     },
                     {
@@ -1007,7 +1007,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "about",
-                "complexitiy",
+                "complexity",
                 "ingridients",
                 "instructions",
                 "need_time",
@@ -1018,7 +1018,7 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 2500
                 },
-                "complexitiy": {
+                "complexity": {
                     "type": "integer",
                     "maximum": 3,
                     "minimum": 1,

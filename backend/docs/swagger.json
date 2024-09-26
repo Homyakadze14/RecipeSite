@@ -655,7 +655,7 @@
                             3
                         ],
                         "type": "integer",
-                        "name": "complexitiy",
+                        "name": "complexity",
                         "in": "formData",
                         "required": true
                     },
@@ -740,7 +740,7 @@
                             3
                         ],
                         "type": "integer",
-                        "name": "complexitiy",
+                        "name": "complexity",
                         "in": "formData"
                     },
                     {
@@ -1001,7 +1001,7 @@
             "type": "object",
             "required": [
                 "about",
-                "complexitiy",
+                "complexity",
                 "ingridients",
                 "instructions",
                 "need_time",
@@ -1012,7 +1012,7 @@
                     "type": "string",
                     "maxLength": 2500
                 },
-                "complexitiy": {
+                "complexity": {
                     "type": "integer",
                     "maximum": 3,
                     "minimum": 1,
