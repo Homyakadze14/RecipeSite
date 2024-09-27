@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
-	"time"
 
 	"github.com/Homyakadze14/RecipeSite/internal/common"
 	"github.com/Homyakadze14/RecipeSite/internal/entities"
@@ -167,33 +165,31 @@ func (u *UserUseCase) hashPassword(password string) (string, error) {
 	return string(cryptPass), nil
 }
 
-func (u *UserUseCase) Signup(ctx context.Context, user *entities.User) (*http.Cookie, string, error) {
+func (u *UserUseCase) Signup(ctx context.Context, user *entities.User) (*entities.AuthUser, error) {
 	user.IconURL = u.defaultIconUrl
 
 	var err error
 	user.Password, err = u.hashPassword(user.Password)
 	if err != nil {
-		return nil, "", fmt.Errorf("UserUseCase - Signup - u.hashPassword: %w", err)
+		return nil, fmt.Errorf("UserUseCase - Signup - u.hashPassword: %w", err)
 	}
 
 	id, err := u.storage.Create(ctx, user)
 	if err != nil {
-		return nil, "", fmt.Errorf("UserUseCase - Signup - u.storage.Create: %w", err)
+		return nil, fmt.Errorf("UserUseCase - Signup - u.storage.Create: %w", err)
 	}
 
 	sess, err := u.sessionManager.Create(ctx, id)
 	if err != nil {
-		return nil, "", fmt.Errorf("UserUseCase - Signup - u.sessionManager.Create: %w", err)
+		return nil, fmt.Errorf("UserUseCase - Signup - u.sessionManager.Create: %w", err)
 	}
 
-	cookie := &http.Cookie{
-		Name:    "session_id",
-		Value:   sess.ID,
-		Expires: time.Now().Add(90 * 60 * time.Hour),
-		Path:    "/",
+	auth := &entities.AuthUser{
+		Login:     user.Login,
+		SessionID: sess.ID,
 	}
 
-	return cookie, user.Login, nil
+	return auth, nil
 }
 
 func (u *UserUseCase) comparePasswords(first, second string) error {
@@ -204,55 +200,46 @@ func (u *UserUseCase) comparePasswords(first, second string) error {
 	return nil
 }
 
-func (u *UserUseCase) Signin(ctx context.Context, params *entities.UserLogin) (*http.Cookie, string, error) {
+func (u *UserUseCase) Signin(ctx context.Context, params *entities.UserLogin) (*entities.AuthUser, error) {
 	var user *entities.User
 	var err error
 	if params.Login != "" {
 		user, err = u.GetByLogin(ctx, params.Login)
 		if err != nil {
-			return nil, "", fmt.Errorf("UserUseCase - Signin - u.GetByLogin: %w", err)
+			return nil, fmt.Errorf("UserUseCase - Signin - u.GetByLogin: %w", err)
 		}
 	} else if params.Email != "" {
 		user, err = u.storage.GetByEmail(ctx, params.Email)
 		if err != nil {
-			return nil, "", fmt.Errorf("UserUseCase - Signin - u.storage.GetByEmail: %w", err)
+			return nil, fmt.Errorf("UserUseCase - Signin - u.storage.GetByEmail: %w", err)
 		}
 	}
 
 	err = u.comparePasswords(user.Password, params.Password)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	sess, err := u.sessionManager.Create(ctx, user.ID)
 	if err != nil {
-		return nil, "", fmt.Errorf("UserUseCase - Signin - u.sessionManager.Create: %w", err)
+		return nil, fmt.Errorf("UserUseCase - Signin - u.sessionManager.Create: %w", err)
 	}
 
-	cookie := &http.Cookie{
-		Name:    "session_id",
-		Value:   sess.ID,
-		Expires: time.Now().Add(90 * 60 * time.Hour),
-		Path:    "/",
+	auth := &entities.AuthUser{
+		Login:     user.Login,
+		SessionID: sess.ID,
 	}
 
-	return cookie, user.Login, nil
+	return auth, nil
 }
 
-func (u *UserUseCase) Logout(ctx *gin.Context) (*http.Cookie, error) {
+func (u *UserUseCase) Logout(ctx *gin.Context) error {
 	err := u.sessionManager.DestroySession(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("UserUseCase - Logout - u.sessionManager.DestroySession: %w", err)
+		return fmt.Errorf("UserUseCase - Logout - u.sessionManager.DestroySession: %w", err)
 	}
 
-	cookie := &http.Cookie{
-		Name:    "session_id",
-		Value:   "sess.ID",
-		Expires: time.Now().AddDate(0, 0, -1),
-		Path:    "/",
-	}
-
-	return cookie, nil
+	return nil
 }
 
 func (u *UserUseCase) Update(ctx context.Context, login string, ownerID int, params *entities.UserUpdate) (string, error) {

@@ -15,6 +15,11 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type AuthUser struct {
+	Login     string `json:"login"`
+	SessionID string `json:"session_id"`
+}
+
 type JSONUserInfo struct {
 	User *UserInfo `json:"user"`
 }

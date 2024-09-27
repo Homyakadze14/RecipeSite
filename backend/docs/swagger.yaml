@@ -1,5 +1,12 @@
 basePath: /api/v1
 definitions:
+  entities.AuthUser:
+    properties:
+      login:
+        type: string
+      session_id:
+        type: string
+    type: object
   entities.Author:
     properties:
       icon_url:
@@ -282,9 +289,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: login
+          description: OK
           schema:
-            type: string
+            $ref: '#/definitions/entities.AuthUser'
         "400":
           description: Bad Request
         "500":
@@ -309,9 +316,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: login
+          description: OK
           schema:
-            type: string
+            $ref: '#/definitions/entities.AuthUser'
         "400":
           description: Bad Request
         "500":

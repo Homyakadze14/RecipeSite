@@ -121,7 +121,7 @@ func (r *userRoutes) checkTGToken(c *gin.Context) {
 // @Param 		user body entities.UserLogin  true  "User params"
 // @Accept      json
 // @Produce     json
-// @Success     200 {string} string "login"
+// @Success     200 {object} entities.AuthUser
 // @Failure     400
 // @Failure     500
 // @Router      /auth/signup [post]
@@ -133,7 +133,7 @@ func (r *userRoutes) signup(c *gin.Context) {
 		return
 	}
 
-	cookie, login, err := r.u.Signup(c.Request.Context(), user)
+	authInfo, err := r.u.Signup(c.Request.Context(), user)
 	if err != nil {
 		slog.Error(err.Error())
 		if errors.Is(err, usecases.ErrUserUnique) {
@@ -144,8 +144,7 @@ func (r *userRoutes) signup(c *gin.Context) {
 		return
 	}
 
-	http.SetCookie(c.Writer, cookie)
-	c.JSON(http.StatusOK, gin.H{"login": login})
+	c.JSON(http.StatusOK, authInfo)
 }
 
 // @Summary     Sign in
@@ -155,7 +154,7 @@ func (r *userRoutes) signup(c *gin.Context) {
 // @Param 		user body entities.UserLogin  true  "User params"
 // @Accept      json
 // @Produce     json
-// @Success     200 {string} string "login"
+// @Success     200 {object} entities.AuthUser
 // @Failure     400
 // @Failure     500
 // @Router      /auth/signin [post]
@@ -174,7 +173,7 @@ func (r *userRoutes) signin(c *gin.Context) {
 		return
 	}
 
-	cookie, login, err := r.u.Signin(c.Request.Context(), params)
+	authInfo, err := r.u.Signin(c.Request.Context(), params)
 	if err != nil {
 		slog.Error(err.Error())
 		if errors.Is(err, usecases.ErrUserNotFound) {
@@ -189,8 +188,7 @@ func (r *userRoutes) signin(c *gin.Context) {
 		return
 	}
 
-	http.SetCookie(c.Writer, cookie)
-	c.JSON(http.StatusOK, gin.H{"login": login})
+	c.JSON(http.StatusOK, authInfo)
 }
 
 // @Summary     Logout
@@ -204,14 +202,13 @@ func (r *userRoutes) signin(c *gin.Context) {
 // @Failure     500
 // @Router      /auth/logout [post]
 func (r *userRoutes) logout(c *gin.Context) {
-	cookie, err := r.u.Logout(c)
+	err := r.u.Logout(c)
 	if err != nil {
 		slog.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
 		return
 	}
 
-	http.SetCookie(c.Writer, cookie)
 	c.JSON(http.StatusOK, gin.H{"status": "you are logout"})
 }
 

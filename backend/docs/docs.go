@@ -113,9 +113,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "login",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/entities.AuthUser"
                         }
                     },
                     "400": {
@@ -154,9 +154,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "login",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/entities.AuthUser"
                         }
                     },
                     "400": {
@@ -878,6 +878,17 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "entities.AuthUser": {
+            "type": "object",
+            "properties": {
+                "login": {
+                    "type": "string"
+                },
+                "session_id": {
+                    "type": "string"
+                }
+            }
+        },
         "entities.Author": {
             "type": "object",
             "properties": {
