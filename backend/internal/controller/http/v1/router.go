@@ -30,7 +30,12 @@ func NewRouter(handler *gin.Engine,
 	// Options
 	handler.Use(gin.Logger())
 	handler.Use(gin.Recovery())
-	handler.Use(cors.Default())
+
+	// Set cors
+	corsConf := cors.DefaultConfig()
+	corsConf.AllowOrigins = []string{"http://localhost:5173"}
+	corsConf.AllowCredentials = true
+	handler.Use(cors.New(corsConf))
 
 	// Swagger
 	swaggerHandler := ginSwagger.DisablingWrapHandler(swaggerFiles.Handler, "DISABLE_SWAGGER_HTTP_HANDLER")
