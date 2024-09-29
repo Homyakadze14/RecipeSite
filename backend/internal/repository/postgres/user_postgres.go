@@ -118,7 +118,7 @@ func (r *UserRepo) GetRecipes(ctx context.Context, userID int) ([]entities.Recip
 	for rows.Next() {
 		var recipe entities.Recipe
 		err := rows.Scan(&recipe.ID, &recipe.UserID, &recipe.Title, &recipe.About,
-			&recipe.Complexitiy, &recipe.NeedTime, &recipe.Ingridients,
+			&recipe.Complexitiy, &recipe.NeedTime, &recipe.Ingridients, &recipe.Instructions,
 			&recipe.PhotosUrls, &recipe.CreatedAt, &recipe.UpdatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("UserRepo - GetRecipes - rows.Scan: %w", err)
