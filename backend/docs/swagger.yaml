@@ -74,6 +74,11 @@ definitions:
       recipe:
         $ref: '#/definitions/entities.Recipe'
     type: object
+  entities.GetRecipeAuthor:
+    properties:
+      user_id:
+        type: integer
+    type: object
   entities.JSONUserInfo:
     properties:
       user:
@@ -524,6 +529,34 @@ paths:
       summary: Unlike
       tags:
       - likes
+  /recipe/author:
+    post:
+      consumes:
+      - application/json
+      description: Get recipe author
+      operationId: get recipe author
+      parameters:
+      - description: Get author
+        in: body
+        name: getauthor
+        schema:
+          $ref: '#/definitions/entities.GetRecipeAuthor'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Author'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Get recipe author
+      tags:
+      - recipe
   /user/{login}:
     get:
       description: Get user info

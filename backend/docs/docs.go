@@ -263,6 +263,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/recipe/author": {
+            "post": {
+                "description": "Get recipe author",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "recipe"
+                ],
+                "summary": "Get recipe author",
+                "operationId": "get recipe author",
+                "parameters": [
+                    {
+                        "description": "Get author",
+                        "name": "getauthor",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/entities.GetRecipeAuthor"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.Author"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/recipe/{id}": {
             "get": {
                 "description": "Get recipe",
@@ -986,6 +1029,14 @@ const docTemplate = `{
                 },
                 "recipe": {
                     "$ref": "#/definitions/entities.Recipe"
+                }
+            }
+        },
+        "entities.GetRecipeAuthor": {
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },

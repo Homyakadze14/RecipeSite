@@ -121,7 +121,7 @@ func (r *RecipeUseCases) getRecipeFromStorage(ctx context.Context, id int) (*ent
 	return recipe, nil
 }
 
-func (r *RecipeUseCases) getRecipeAuthor(ctx context.Context, userID int) (*entities.Author, error) {
+func (r *RecipeUseCases) GetRecipeAuthor(ctx context.Context, userID int) (*entities.Author, error) {
 	author, err := r.userUseCase.GetAuthor(ctx, userID)
 	if err != nil {
 		if errors.Is(err, ErrUserNotFound) {
@@ -159,7 +159,7 @@ func (r *RecipeUseCases) Get(ctx context.Context, id, userID int, authorized boo
 	fullRecipe := entities.FullRecipe{}
 	fullRecipe.Recipe = recipe
 
-	fullRecipe.Author, err = r.getRecipeAuthor(ctx, fullRecipe.Recipe.UserID)
+	fullRecipe.Author, err = r.GetRecipeAuthor(ctx, fullRecipe.Recipe.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("RecipeUseCase - Get - r.getRecipeAuthor: %w", err)
 	}

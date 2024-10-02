@@ -19,6 +19,10 @@ type Recipe struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 }
 
+type GetRecipeAuthor struct {
+	UserID int `json:"user_id"`
+}
+
 type CreateRecipe struct {
 	Title        string          `json:"title" binding:"required,min=3,max=50"  form:"title"`
 	About        string          `json:"about" binding:"required,max=2500"  form:"about"`

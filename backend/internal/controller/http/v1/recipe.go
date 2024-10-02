@@ -32,6 +32,7 @@ func NewRecipeRoutes(handler *gin.RouterGroup, u *usecases.RecipeUseCases, su *u
 		h.GET("", r.getAll)
 		h.POST("", r.getFiltered)
 		h.GET("/:id", r.get)
+		h.POST("/author", r.getAuthor)
 	}
 
 	ur := handler.Group("/user/:login/recipe")
@@ -152,6 +153,40 @@ func (r *recipeRoutes) get(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, entities.RecipeInfo{Info: recipe})
+}
+
+// @Summary     Get recipe author
+// @Description Get recipe author
+// @ID          get recipe author
+// @Tags  	    recipe
+// @Accept      json
+// @Param 		getauthor body entities.GetRecipeAuthor false "Get author"
+// @Produce     json
+// @Success     200 {object} entities.Author
+// @Failure     400
+// @Failure     404
+// @Failure     500
+// @Router      /recipe/author [post]
+func (r *recipeRoutes) getAuthor(c *gin.Context) {
+	var req *entities.GetRecipeAuthor
+	if err := c.ShouldBindJSON(&req); err != nil {
+		slog.Error(err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": common.GetErrMessages(err).Error()})
+		return
+	}
+
+	author, err := r.u.GetRecipeAuthor(c.Request.Context(), req.UserID)
+	if err != nil {
+		slog.Error(err.Error())
+		if errors.Is(err, usecases.ErrUserNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": usecases.ErrUserNotFound.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrServerError.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, author)
 }
 
 func (r *recipeRoutes) getPhotos(c *gin.Context) ([]io.ReadSeeker, error) {
