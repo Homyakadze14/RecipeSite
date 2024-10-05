@@ -347,7 +347,20 @@ func (u *UserUseCase) Get(ctx context.Context, login string, ownerID int, author
 			if err != nil {
 				return nil, fmt.Errorf("UserUseCase - Get - u.likeUseCases.GetLikedRecipies: %w", err)
 			}
-			userInfo.LikedRecipies = likedRecipes
+			rwa := make([]entities.RecipeWithAuthor, 0, 10)
+			for _, recipe := range likedRecipes {
+				rc := entities.RecipeWithAuthor{
+					Recipe: &recipe,
+				}
+
+				rc.Author, err = u.GetAuthor(ctx, recipe.UserID)
+				if err != nil {
+					return nil, fmt.Errorf("RecipeUseCase - GetAll - r.getRecipeAuthor: %w", err)
+				}
+
+				rwa = append(rwa, rc)
+			}
+			userInfo.LikedRecipies = rwa
 		}
 	}
 
@@ -355,7 +368,20 @@ func (u *UserUseCase) Get(ctx context.Context, login string, ownerID int, author
 	if err != nil {
 		return nil, fmt.Errorf("UserUseCase - Get - u.storage.GetRecipes: %w", err)
 	}
-	userInfo.Recipies = recipies
+	rwa := make([]entities.RecipeWithAuthor, 0, 10)
+	for _, recipe := range recipies {
+		rc := entities.RecipeWithAuthor{
+			Recipe: &recipe,
+		}
+
+		rc.Author, err = u.GetAuthor(ctx, recipe.UserID)
+		if err != nil {
+			return nil, fmt.Errorf("RecipeUseCase - GetAll - r.getRecipeAuthor: %w", err)
+		}
+
+		rwa = append(rwa, rc)
+	}
+	userInfo.Recipies = rwa
 
 	return userInfo, nil
 }

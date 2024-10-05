@@ -25,13 +25,13 @@ type JSONUserInfo struct {
 }
 
 type UserInfo struct {
-	ID            int       `json:"id"`
-	Login         string    `json:"login"`
-	IconURL       string    `json:"icon_url"`
-	About         string    `json:"about"`
-	CreatedAt     time.Time `json:"created_at"`
-	Recipies      []Recipe  `json:"recipies"`
-	LikedRecipies []Recipe  `json:"liked_recipies"`
+	ID            int                `json:"id"`
+	Login         string             `json:"login"`
+	IconURL       string             `json:"icon_url"`
+	About         string             `json:"about"`
+	CreatedAt     time.Time          `json:"created_at"`
+	Recipies      []RecipeWithAuthor `json:"recipies"`
+	LikedRecipies []RecipeWithAuthor `json:"liked_recipies"`
 }
 
 type Author struct {
