@@ -49,7 +49,7 @@ func NewRecipeRoutes(handler *gin.RouterGroup, u *usecases.RecipeUseCases, su *u
 // @ID          get all recipe
 // @Tags  	    recipe
 // @Produce     json
-// @Success     200 {object} []entities.Recipe
+// @Success     200 {object} []entities.RecipeWithAuthor
 // @Failure     500
 // @Router      /recipe [get]
 func (r *recipeRoutes) getAll(c *gin.Context) {
@@ -70,7 +70,7 @@ func (r *recipeRoutes) getAll(c *gin.Context) {
 // @Accept      json
 // @Param 		filter body entities.RecipeFilter false "filter"
 // @Produce     json
-// @Success     200 {object} []entities.Recipe
+// @Success     200 {object} []entities.RecipeWithAuthor
 // @Failure     400
 // @Failure     500
 // @Router      /recipe [post]

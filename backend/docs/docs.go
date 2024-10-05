@@ -212,7 +212,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/entities.Recipe"
+                                "$ref": "#/definitions/entities.RecipeWithAuthor"
                             }
                         }
                     },
@@ -250,7 +250,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/entities.Recipe"
+                                "$ref": "#/definitions/entities.RecipeWithAuthor"
                             }
                         }
                     },
@@ -1165,6 +1165,17 @@ const docTemplate = `{
             "properties": {
                 "info": {
                     "$ref": "#/definitions/entities.FullRecipe"
+                }
+            }
+        },
+        "entities.RecipeWithAuthor": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "$ref": "#/definitions/entities.Author"
+                },
+                "recipe": {
+                    "$ref": "#/definitions/entities.Recipe"
                 }
             }
         },

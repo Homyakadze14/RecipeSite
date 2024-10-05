@@ -171,6 +171,13 @@ definitions:
       info:
         $ref: '#/definitions/entities.FullRecipe'
     type: object
+  entities.RecipeWithAuthor:
+    properties:
+      author:
+        $ref: '#/definitions/entities.Author'
+      recipe:
+        $ref: '#/definitions/entities.Recipe'
+    type: object
   entities.UserIcon:
     properties:
       icon_url:
@@ -360,7 +367,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/entities.Recipe'
+              $ref: '#/definitions/entities.RecipeWithAuthor'
             type: array
         "500":
           description: Internal Server Error
@@ -385,7 +392,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/entities.Recipe'
+              $ref: '#/definitions/entities.RecipeWithAuthor'
             type: array
         "400":
           description: Bad Request

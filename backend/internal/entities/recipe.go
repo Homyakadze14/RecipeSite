@@ -19,6 +19,11 @@ type Recipe struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 }
 
+type RecipeWithAuthor struct {
+	Recipe *Recipe `json:"recipe"`
+	Author *Author `json:"author"`
+}
+
 type GetRecipeAuthor struct {
 	UserID int `json:"user_id"`
 }

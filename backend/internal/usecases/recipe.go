@@ -79,15 +79,29 @@ func NewRecipeUsecase(st recipeStorage, us userUseCase, lu likeUseCase,
 	}
 }
 
-func (r *RecipeUseCases) GetAll(ctx context.Context) ([]entities.Recipe, error) {
+func (r *RecipeUseCases) GetAll(ctx context.Context) ([]entities.RecipeWithAuthor, error) {
 	recipes, err := r.storage.GetAll(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("RecipeUseCase - GetAll - r.storage.GetAll: %w", err)
 	}
-	return recipes, nil
+
+	rwa := make([]entities.RecipeWithAuthor, 0, 10)
+	for _, recipe := range recipes {
+		rc := entities.RecipeWithAuthor{
+			Recipe: &recipe,
+		}
+
+		rc.Author, err = r.GetRecipeAuthor(ctx, recipe.UserID)
+		if err != nil {
+			return nil, fmt.Errorf("RecipeUseCase - GetAll - r.getRecipeAuthor: %w", err)
+		}
+
+		rwa = append(rwa, rc)
+	}
+	return rwa, nil
 }
 
-func (r *RecipeUseCases) GetFiltered(ctx context.Context, filter *entities.RecipeFilter) ([]entities.Recipe, error) {
+func (r *RecipeUseCases) GetFiltered(ctx context.Context, filter *entities.RecipeFilter) ([]entities.RecipeWithAuthor, error) {
 	recipes, err := r.storage.GetFiltered(ctx, filter)
 	if err != nil {
 		if errors.Is(err, ErrBadOrderField) {
@@ -95,7 +109,21 @@ func (r *RecipeUseCases) GetFiltered(ctx context.Context, filter *entities.Recip
 		}
 		return nil, fmt.Errorf("RecipeUseCase - GetFiltered - r.storage.GetFiltered: %w", err)
 	}
-	return recipes, nil
+
+	rwa := make([]entities.RecipeWithAuthor, 0, 10)
+	for _, recipe := range recipes {
+		rc := entities.RecipeWithAuthor{
+			Recipe: &recipe,
+		}
+
+		rc.Author, err = r.GetRecipeAuthor(ctx, recipe.UserID)
+		if err != nil {
+			return nil, fmt.Errorf("RecipeUseCase - GetAll - r.getRecipeAuthor: %w", err)
+		}
+
+		rwa = append(rwa, rc)
+	}
+	return rwa, nil
 }
 
 func (r *RecipeUseCases) getRecipeFromCache(ctx context.Context, key string) (*entities.Recipe, error) {
