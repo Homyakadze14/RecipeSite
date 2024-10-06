@@ -350,7 +350,17 @@ func (u *UserUseCase) Get(ctx context.Context, login string, ownerID int, author
 			rwa := make([]entities.RecipeWithAuthor, 0, 10)
 			for _, recipe := range likedRecipes {
 				rc := entities.RecipeWithAuthor{
-					Recipe: &recipe,
+					ID:           recipe.ID,
+					UserID:       recipe.UserID,
+					Title:        recipe.Title,
+					About:        recipe.About,
+					Complexitiy:  recipe.Complexitiy,
+					NeedTime:     recipe.NeedTime,
+					Ingridients:  recipe.Ingridients,
+					Instructions: recipe.Instructions,
+					PhotosUrls:   recipe.PhotosUrls,
+					CreatedAt:    recipe.CreatedAt,
+					UpdatedAt:    recipe.UpdatedAt,
 				}
 
 				rc.Author, err = u.GetAuthor(ctx, recipe.UserID)
@@ -371,7 +381,17 @@ func (u *UserUseCase) Get(ctx context.Context, login string, ownerID int, author
 	rwa := make([]entities.RecipeWithAuthor, 0, 10)
 	for _, recipe := range recipies {
 		rc := entities.RecipeWithAuthor{
-			Recipe: &recipe,
+			ID:           recipe.ID,
+			UserID:       recipe.UserID,
+			Title:        recipe.Title,
+			About:        recipe.About,
+			Complexitiy:  recipe.Complexitiy,
+			NeedTime:     recipe.NeedTime,
+			Ingridients:  recipe.Ingridients,
+			Instructions: recipe.Instructions,
+			PhotosUrls:   recipe.PhotosUrls,
+			CreatedAt:    recipe.CreatedAt,
+			UpdatedAt:    recipe.UpdatedAt,
 		}
 
 		rc.Author, err = u.GetAuthor(ctx, recipe.UserID)

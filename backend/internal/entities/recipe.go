@@ -20,8 +20,18 @@ type Recipe struct {
 }
 
 type RecipeWithAuthor struct {
-	Recipe *Recipe `json:"recipe"`
-	Author *Author `json:"author"`
+	ID           int       `json:"id"`
+	UserID       int       `json:"creator_user_id"`
+	Title        string    `json:"title" binding:"required,min=3,max=50"`
+	About        string    `json:"about" binding:"required,max=2500"`
+	Complexitiy  int       `json:"complexity" binding:"required,min=1,max=3"  enums:"1,2,3"`
+	NeedTime     string    `json:"need_time" binding:"required"`
+	Ingridients  string    `json:"ingridients" binding:"required,max=1500"`
+	Instructions string    `json:"instructions" binding:"required,max=2000"`
+	PhotosUrls   string    `json:"photos_urls"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Author       *Author   `json:"author"`
 }
 
 type GetRecipeAuthor struct {
@@ -93,11 +103,10 @@ type RecipeInfo struct {
 }
 
 type FullRecipe struct {
-	Recipe     *Recipe   `json:"recipe"`
-	Author     *Author   `json:"author"`
-	LikesCount int       `json:"likes_count"`
-	IsLiked    bool      `json:"is_liked"`
-	Comments   []Comment `json:"comments"`
+	Recipe     *RecipeWithAuthor `json:"recipe"`
+	LikesCount int               `json:"likes_count"`
+	IsLiked    bool              `json:"is_liked"`
+	Comments   []Comment         `json:"comments"`
 }
 
 type RecipeFilter struct {

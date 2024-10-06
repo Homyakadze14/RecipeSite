@@ -88,7 +88,17 @@ func (r *RecipeUseCases) GetAll(ctx context.Context) ([]entities.RecipeWithAutho
 	rwa := make([]entities.RecipeWithAuthor, 0, 10)
 	for _, recipe := range recipes {
 		rc := entities.RecipeWithAuthor{
-			Recipe: &recipe,
+			ID:           recipe.ID,
+			UserID:       recipe.UserID,
+			Title:        recipe.Title,
+			About:        recipe.About,
+			Complexitiy:  recipe.Complexitiy,
+			NeedTime:     recipe.NeedTime,
+			Ingridients:  recipe.Ingridients,
+			Instructions: recipe.Instructions,
+			PhotosUrls:   recipe.PhotosUrls,
+			CreatedAt:    recipe.CreatedAt,
+			UpdatedAt:    recipe.UpdatedAt,
 		}
 
 		rc.Author, err = r.GetRecipeAuthor(ctx, recipe.UserID)
@@ -113,7 +123,17 @@ func (r *RecipeUseCases) GetFiltered(ctx context.Context, filter *entities.Recip
 	rwa := make([]entities.RecipeWithAuthor, 0, 10)
 	for _, recipe := range recipes {
 		rc := entities.RecipeWithAuthor{
-			Recipe: &recipe,
+			ID:           recipe.ID,
+			UserID:       recipe.UserID,
+			Title:        recipe.Title,
+			About:        recipe.About,
+			Complexitiy:  recipe.Complexitiy,
+			NeedTime:     recipe.NeedTime,
+			Ingridients:  recipe.Ingridients,
+			Instructions: recipe.Instructions,
+			PhotosUrls:   recipe.PhotosUrls,
+			CreatedAt:    recipe.CreatedAt,
+			UpdatedAt:    recipe.UpdatedAt,
 		}
 
 		rc.Author, err = r.GetRecipeAuthor(ctx, recipe.UserID)
@@ -185,9 +205,21 @@ func (r *RecipeUseCases) Get(ctx context.Context, id, userID int, authorized boo
 	}
 
 	fullRecipe := entities.FullRecipe{}
-	fullRecipe.Recipe = recipe
+	fullRecipe.Recipe = &entities.RecipeWithAuthor{
+		ID:           recipe.ID,
+		UserID:       recipe.UserID,
+		Title:        recipe.Title,
+		About:        recipe.About,
+		Complexitiy:  recipe.Complexitiy,
+		NeedTime:     recipe.NeedTime,
+		Ingridients:  recipe.Ingridients,
+		Instructions: recipe.Instructions,
+		PhotosUrls:   recipe.PhotosUrls,
+		CreatedAt:    recipe.CreatedAt,
+		UpdatedAt:    recipe.UpdatedAt,
+	}
 
-	fullRecipe.Author, err = r.GetRecipeAuthor(ctx, fullRecipe.Recipe.UserID)
+	fullRecipe.Recipe.Author, err = r.GetRecipeAuthor(ctx, fullRecipe.Recipe.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("RecipeUseCase - Get - r.getRecipeAuthor: %w", err)
 	}
