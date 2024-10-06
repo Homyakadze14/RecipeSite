@@ -1012,9 +1012,6 @@ const docTemplate = `{
         "entities.FullRecipe": {
             "type": "object",
             "properties": {
-                "author": {
-                    "$ref": "#/definitions/entities.Author"
-                },
                 "comments": {
                     "type": "array",
                     "items": {
@@ -1028,7 +1025,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "recipe": {
-                    "$ref": "#/definitions/entities.Recipe"
+                    "$ref": "#/definitions/entities.RecipeWithAuthor"
                 }
             }
         },
@@ -1061,64 +1058,6 @@ const docTemplate = `{
             ],
             "properties": {
                 "token": {
-                    "type": "string"
-                }
-            }
-        },
-        "entities.Recipe": {
-            "type": "object",
-            "required": [
-                "about",
-                "complexity",
-                "ingridients",
-                "instructions",
-                "need_time",
-                "title"
-            ],
-            "properties": {
-                "about": {
-                    "type": "string",
-                    "maxLength": 2500
-                },
-                "complexity": {
-                    "type": "integer",
-                    "maximum": 3,
-                    "minimum": 1,
-                    "enum": [
-                        1,
-                        2,
-                        3
-                    ]
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "creator_user_id": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "ingridients": {
-                    "type": "string",
-                    "maxLength": 1500
-                },
-                "instructions": {
-                    "type": "string",
-                    "maxLength": 2000
-                },
-                "need_time": {
-                    "type": "string"
-                },
-                "photos_urls": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string",
-                    "maxLength": 50,
-                    "minLength": 3
-                },
-                "updated_at": {
                     "type": "string"
                 }
             }
@@ -1170,12 +1109,62 @@ const docTemplate = `{
         },
         "entities.RecipeWithAuthor": {
             "type": "object",
+            "required": [
+                "about",
+                "complexity",
+                "ingridients",
+                "instructions",
+                "need_time",
+                "title"
+            ],
             "properties": {
+                "about": {
+                    "type": "string",
+                    "maxLength": 2500
+                },
                 "author": {
                     "$ref": "#/definitions/entities.Author"
                 },
-                "recipe": {
-                    "$ref": "#/definitions/entities.Recipe"
+                "complexity": {
+                    "type": "integer",
+                    "maximum": 3,
+                    "minimum": 1,
+                    "enum": [
+                        1,
+                        2,
+                        3
+                    ]
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "creator_user_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "ingridients": {
+                    "type": "string",
+                    "maxLength": 1500
+                },
+                "instructions": {
+                    "type": "string",
+                    "maxLength": 2000
+                },
+                "need_time": {
+                    "type": "string"
+                },
+                "photos_urls": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 3
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -1205,7 +1194,7 @@ const docTemplate = `{
                 "liked_recipies": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/entities.Recipe"
+                        "$ref": "#/definitions/entities.RecipeWithAuthor"
                     }
                 },
                 "login": {
@@ -1214,7 +1203,7 @@ const docTemplate = `{
                 "recipies": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/entities.Recipe"
+                        "$ref": "#/definitions/entities.RecipeWithAuthor"
                     }
                 }
             }

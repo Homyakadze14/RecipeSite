@@ -61,8 +61,6 @@ definitions:
     type: object
   entities.FullRecipe:
     properties:
-      author:
-        $ref: '#/definitions/entities.Author'
       comments:
         items:
           $ref: '#/definitions/entities.Comment'
@@ -72,7 +70,7 @@ definitions:
       likes_count:
         type: integer
       recipe:
-        $ref: '#/definitions/entities.Recipe'
+        $ref: '#/definitions/entities.RecipeWithAuthor'
     type: object
   entities.GetRecipeAuthor:
     properties:
@@ -95,11 +93,46 @@ definitions:
     required:
     - token
     type: object
-  entities.Recipe:
+  entities.RecipeFilter:
+    properties:
+      limit:
+        example: 25
+        type: integer
+      offset:
+        example: 0
+        type: integer
+      order_by:
+        enum:
+        - -1
+        - 0
+        - 1
+        maximum: 1
+        minimum: -1
+        type: integer
+      order_field:
+        enum:
+        - title
+        - about
+        - ingridients
+        - emtpy
+        example: title
+        type: string
+      query:
+        example: tasty food
+        type: string
+    type: object
+  entities.RecipeInfo:
+    properties:
+      info:
+        $ref: '#/definitions/entities.FullRecipe'
+    type: object
+  entities.RecipeWithAuthor:
     properties:
       about:
         maxLength: 2500
         type: string
+      author:
+        $ref: '#/definitions/entities.Author'
       complexity:
         enum:
         - 1
@@ -138,46 +171,6 @@ definitions:
     - need_time
     - title
     type: object
-  entities.RecipeFilter:
-    properties:
-      limit:
-        example: 25
-        type: integer
-      offset:
-        example: 0
-        type: integer
-      order_by:
-        enum:
-        - -1
-        - 0
-        - 1
-        maximum: 1
-        minimum: -1
-        type: integer
-      order_field:
-        enum:
-        - title
-        - about
-        - ingridients
-        - emtpy
-        example: title
-        type: string
-      query:
-        example: tasty food
-        type: string
-    type: object
-  entities.RecipeInfo:
-    properties:
-      info:
-        $ref: '#/definitions/entities.FullRecipe'
-    type: object
-  entities.RecipeWithAuthor:
-    properties:
-      author:
-        $ref: '#/definitions/entities.Author'
-      recipe:
-        $ref: '#/definitions/entities.Recipe'
-    type: object
   entities.UserIcon:
     properties:
       icon_url:
@@ -195,13 +188,13 @@ definitions:
         type: integer
       liked_recipies:
         items:
-          $ref: '#/definitions/entities.Recipe'
+          $ref: '#/definitions/entities.RecipeWithAuthor'
         type: array
       login:
         type: string
       recipies:
         items:
-          $ref: '#/definitions/entities.Recipe'
+          $ref: '#/definitions/entities.RecipeWithAuthor'
         type: array
     type: object
   entities.UserLogin:
