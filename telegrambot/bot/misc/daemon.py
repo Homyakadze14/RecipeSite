@@ -7,25 +7,26 @@ from aiogram.utils.markdown import link
 
 def get_post_info(id):
     try:
-        url = environ.get("RECIPE_URL") + f"{id}"
+        url = environ.get("BACKEND_BASE_URL") + f"/recipe/{id}"
+        recipe_url = environ.get("RECIPE_URL") + f"{id}"
         r = requests.get(url)
         if r.status_code == 200:
             recipe = r.json()['info']['recipe']
-            author = r.json()['info']['author']
+            author = r.json()['info']['recipe']['author']
             info = (f"*Новый рецепт\\!*\n\n*Название:* {recipe['title']}\n*Описание:* {recipe['about']}\n"
                     f"*Создатель:* {author['login']}\n" +
-                    f"_{link('Подробнее', url)}_")
+                    f"_{link('Подробнее', recipe_url)}_")
             return info
         else:
-            print("Server error")
+            logger.error("Server error")
     except Exception as e:
-        print(e)
+        logger.error(e)
         return ""
 
 
 async def send_messages(bot, message):
-    for subscribers in get.get_subscribers(message['CreatorID']):
-        tg_user = get.get_tg_user_id(subscribers.subscriber_id)
+    for subscriber in get.get_subscribers(message['CreatorID']):
+        tg_user = get.get_tg_user_id(subscriber.subscriber_id)
         if tg_user is not None:
             try:
                 post = get_post_info(message['RecipeID'])
@@ -33,7 +34,7 @@ async def send_messages(bot, message):
                     continue
                 await bot.send_message(chat_id=tg_user.telegram_user_id, text=post, parse_mode="MarkdownV2")
             except Exception as e:
-                print(e)
+                logger.error(e)
 
 
 async def run(bot, loop):
