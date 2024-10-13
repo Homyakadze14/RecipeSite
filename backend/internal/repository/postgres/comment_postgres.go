@@ -71,7 +71,7 @@ func (r *CommentRepo) GetByID(ctx context.Context, id int) (*entities.Comment, e
 }
 
 func (r *CommentRepo) GetAll(ctx context.Context, recipeID int) ([]entities.Comment, error) {
-	rows, err := r.Pool.Query(ctx, "SELECT * FROM comments WHERE recipe_id=$1", recipeID)
+	rows, err := r.Pool.Query(ctx, "SELECT * FROM comments WHERE recipe_id=$1 ORDER BY created_at", recipeID)
 	if err != nil {
 		return nil, fmt.Errorf("CommentRepo - GetAll - r.Pool.Query: %w", err)
 	}
