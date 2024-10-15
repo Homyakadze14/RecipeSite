@@ -61,7 +61,7 @@ func (r *RecipeRepo) GetFiltered(ctx context.Context, filter *entities.RecipeFil
 	allowOrderFields := []string{"", "title", "complexitiy", "updated_at"}
 	if slices.Contains(allowOrderFields, filter.OrderField) {
 		if filter.OrderField == "" {
-			filter.OrderField = "title"
+			filter.OrderField = "updated_at"
 		}
 		request.WriteString(fmt.Sprintf(" ORDER BY %s", filter.OrderField))
 	} else {
