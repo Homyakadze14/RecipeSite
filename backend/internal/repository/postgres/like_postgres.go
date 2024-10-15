@@ -71,7 +71,7 @@ func (l *LikeRepo) Unlike(ctx context.Context, like *entities.Like) error {
 
 func (l *LikeRepo) GetLikedRecipies(ctx context.Context, userID int) ([]entities.Recipe, error) {
 	rows, err := l.Pool.Query(ctx,
-		"SELECT recipes.id, title, about, complexitiy, need_time, ingridients, photos_urls, created_at, updated_at FROM likes JOIN recipes ON recipes.id=likes.recipe_id WHERE likes.user_id=$1",
+		"SELECT recipes.id, recipes.user_id, title, about, complexitiy, need_time, ingridients, instructions, photos_urls, created_at, updated_at FROM likes JOIN recipes ON recipes.id=likes.recipe_id WHERE likes.user_id=$1",
 		userID)
 
 	if err != nil {
@@ -81,8 +81,8 @@ func (l *LikeRepo) GetLikedRecipies(ctx context.Context, userID int) ([]entities
 	recipes := make([]entities.Recipe, 0, 20)
 	for rows.Next() {
 		var recipe entities.Recipe
-		err := rows.Scan(&recipe.ID, &recipe.Title, &recipe.About,
-			&recipe.Complexitiy, &recipe.NeedTime, &recipe.Ingridients,
+		err := rows.Scan(&recipe.ID, &recipe.UserID, &recipe.Title, &recipe.About,
+			&recipe.Complexitiy, &recipe.NeedTime, &recipe.Ingridients, &recipe.Instructions,
 			&recipe.PhotosUrls, &recipe.CreatedAt, &recipe.UpdatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("LikeRepo - GetLikedRecipies - rows.Scan: %w", err)
