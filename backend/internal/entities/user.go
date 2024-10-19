@@ -30,6 +30,7 @@ type UserInfo struct {
 	IconURL       string             `json:"icon_url"`
 	About         string             `json:"about"`
 	CreatedAt     time.Time          `json:"created_at"`
+	IsSubscribed  bool               `json:"is_subscribed"`
 	Recipies      []RecipeWithAuthor `json:"recipies"`
 	LikedRecipies []RecipeWithAuthor `json:"liked_recipies"`
 }

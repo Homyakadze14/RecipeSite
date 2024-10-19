@@ -1191,6 +1191,9 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "is_subscribed": {
+                    "type": "boolean"
+                },
                 "liked_recipies": {
                     "type": "array",
                     "items": {

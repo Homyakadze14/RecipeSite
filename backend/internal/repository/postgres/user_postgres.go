@@ -128,3 +128,18 @@ func (r *UserRepo) GetRecipes(ctx context.Context, userID int) ([]entities.Recip
 
 	return recipes, nil
 }
+
+func (r *UserRepo) IsAlreadySubscribe(ctx context.Context, info *entities.SubscribeInfo) (bool, error) {
+	row := r.Pool.QueryRow(ctx, "SELECT id FROM subscriptions WHERE creator_id=$1 AND subscriber_id=$2", info.CreatorID, info.SubscriberID)
+
+	var id int
+	err := row.Scan(&id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		return false, fmt.Errorf("UserRepo - IsAlreadySubscribe - r.Pool.QueryRow: %w", err)
+	}
+
+	return true, nil
+}

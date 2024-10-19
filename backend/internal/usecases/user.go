@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 
 	"github.com/Homyakadze14/RecipeSite/internal/common"
 	"github.com/Homyakadze14/RecipeSite/internal/entities"
@@ -21,6 +22,7 @@ type userStorage interface {
 	GetRecipes(ctx context.Context, userID int) ([]entities.Recipe, error)
 	GetAuthor(ctx context.Context, id int) (*entities.Author, error)
 	GetIconByLogin(ctx context.Context, login string) (*entities.UserIcon, error)
+	IsAlreadySubscribe(ctx context.Context, info *entities.SubscribeInfo) (bool, error)
 }
 
 type fileStorage interface {
@@ -328,6 +330,15 @@ func (u *UserUseCase) GetIcon(ctx context.Context, login string) (*entities.User
 	return icn, nil
 }
 
+func (u *UserUseCase) IsSubscribe(ctx context.Context, info *entities.SubscribeInfo) (bool, error) {
+	isSubscibe, err := u.storage.IsAlreadySubscribe(ctx, info)
+	if err != nil {
+		return false, fmt.Errorf("SubscribeUseCases - IsSubscribe - u.storage.IsSubscribe: %w", err)
+	}
+
+	return isSubscibe, nil
+}
+
 func (u *UserUseCase) Get(ctx context.Context, login string, ownerID int, authorized bool) (*entities.UserInfo, error) {
 	user, err := u.GetByLogin(ctx, login)
 	if err != nil {
@@ -371,6 +382,16 @@ func (u *UserUseCase) Get(ctx context.Context, login string, ownerID int, author
 				rwa = append(rwa, rc)
 			}
 			userInfo.LikedRecipies = rwa
+		}
+
+		subscribeInfo := &entities.SubscribeInfo{
+			CreatorID:    user.ID,
+			SubscriberID: ownerID,
+		}
+		slog.Info(fmt.Sprintf("%v", subscribeInfo))
+		userInfo.IsSubscribed, err = u.IsSubscribe(ctx, subscribeInfo)
+		if err != nil {
+			return nil, fmt.Errorf("UserUseCase - Get - u.IsSubscribe: %w", err)
 		}
 	}
 
