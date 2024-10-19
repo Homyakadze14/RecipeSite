@@ -1,0 +1,26 @@
+@import '../../styles/variables.scss';
+
+.tabs {
+	ul {
+		display: flex;
+		flex-direction: row;
+
+		li {
+			list-style-type: none;
+			padding: 8px 20px;
+			cursor: pointer;
+			user-select: none;
+			font-size: 26px;
+			transition: 0.3s;
+			border-bottom: 3px solid transparent;
+
+			&:hover {
+				opacity: 0.6;
+			}
+
+			&.active {
+				border-bottom: 3px solid $brightOrange;
+			}
+		}
+	}
+}

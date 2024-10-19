@@ -1,0 +1,15 @@
+@import '../../styles/variables.scss';
+
+.list {
+	display: grid;
+	max-width: 900px;
+	margin-bottom: 30px;
+
+	.noDataText {
+		font-size: 32px;
+	}
+
+	li:not(:nth-last-child(1)) {
+		border-bottom: 1px solid $black;
+	}
+}

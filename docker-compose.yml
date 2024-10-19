@@ -64,5 +64,14 @@ services:
     depends_on:
       - backend
 
+  
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    image: frontend
+    restart: always
+    ports:
+      - 5173:5173
+
 volumes:
   pg-data:

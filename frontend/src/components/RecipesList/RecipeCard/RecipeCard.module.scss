@@ -1,0 +1,128 @@
+@import './../../../styles/variables.scss';
+
+.card {
+	display: flex;
+	flex-direction: row;
+	background-color: $white;
+	height: 250px;
+	width: 900px;
+	max-width: 900px;
+	transition: 0.4s;
+	cursor: pointer;
+
+	&:hover {
+		opacity: 0.8;
+	}
+
+	img {
+		width: 250px;
+		height: 250px;
+		aspect-ratio: 1 / 1;
+		object-fit: cover;
+	}
+
+	.infoContainer {
+		display: flex;
+		flex-direction: column;
+		padding: 0 20px 0 20px;
+		height: 100%;
+		width: 100%;
+
+		> div {
+			display: flex;
+			flex-direction: row;
+			justify-content: space-between;
+			align-items: center;
+			width: auto;
+
+			> div {
+				display: flex;
+				flex-direction: row;
+				justify-content: flex-end;
+				gap: 16px;
+				width: auto;
+
+				> button {
+					background-color: transparent;
+					border: none;
+					cursor: pointer;
+					transition: 0.2s;
+
+					&:hover {
+						transform: scale(1.1);
+					}
+				}
+			}
+		}
+
+		.title {
+			font-size: 48px;
+			color: $black;
+			font-weight: 700;
+			line-height: 1.12;
+			margin-bottom: 10px;
+			max-width: 550px;
+			width: 100%;
+			margin-right: 20px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		div {
+			display: flex;
+			justify-content: flex-start;
+			align-items: center;
+			color: $black;
+			font-weight: 700;
+			width: 100%;
+
+			.timeContainer {
+				width: auto;
+				gap: 4px;
+
+				.time {
+					font-size: 13px;
+				}
+			}
+
+			.complexityContainer {
+				gap: 4px;
+				margin-left: 20px;
+			}
+		}
+
+		.description {
+			position: relative;
+			font-size: 16px;
+			font-weight: 400;
+			line-height: 1.3;
+			margin-top: 10px;
+			max-height: 200px;
+			max-width: 630px;
+			word-break: break-word;
+			overflow-wrap: break-word;
+			hyphens: auto;
+			white-space: normal;
+			overflow: hidden;
+			height: 100%;
+			display: -webkit-box;
+			line-clamp: 8;
+			-webkit-box-orient: vertical;
+
+			&:after {
+				content: '';
+				position: absolute;
+				bottom: 0;
+				right: 0;
+				width: 200px;
+				height: 20px;
+				background: linear-gradient(
+					to left,
+					rgba(255, 255, 255, 1),
+					rgba(255, 255, 255, 0)
+				);
+			}
+		}
+	}
+}

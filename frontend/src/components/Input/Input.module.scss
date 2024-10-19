@@ -1,0 +1,24 @@
+@import './../../styles/variables.scss';
+
+.inputContainer {
+	position: relative;
+
+	.input {
+		border: 1px solid $black;
+		border-radius: 16px;
+		height: 60px;
+		width: 510px;
+		padding: 0 20px;
+		font-size: 24px;
+	}
+
+	.eyeButton {
+		position: absolute;
+		top: 20px;
+		right: 15px;
+		transform: translateY(-50%);
+		background-color: transparent;
+		border: none;
+		cursor: pointer;
+	}
+}

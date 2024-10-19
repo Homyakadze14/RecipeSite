@@ -1,0 +1,36 @@
+@import '../../styles/variables.scss';
+
+@mixin modal($bgColorValue, $transitionValue) {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 100vh;
+	width: 100vw;
+	background-color: $bgColorValue;
+	position: fixed;
+	top: 0;
+	left: 0;
+	opacity: 0;
+	pointer-events: none;
+	transition: $transitionValue;
+	z-index: 20;
+}
+
+.modal {
+	@include modal(rgba(0, 0, 0, 0.3), 0.5s);
+
+	.modalContent {
+		display: flex;
+		flex-direction: column;
+		padding: 40px;
+		border-radius: 10px;
+		color: $black;
+		background-color: $white;
+		overflow-y: auto;
+		max-height: calc(100vh - 60px);
+	}
+}
+.active {
+	opacity: 1;
+	pointer-events: all;
+}

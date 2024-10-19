@@ -1,0 +1,55 @@
+@import '../../styles/variables.scss';
+
+.page {
+	display: flex;
+	flex-direction: column;
+	max-width: 900px;
+	width: 900px;
+
+	.title {
+		font-size: 28px;
+		margin-bottom: 10px;
+	}
+
+	.tokenContainer {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 30px;
+
+		.token {
+			font-size: 34px;
+			font-weight: 700;
+			overflow-x: auto;
+			white-space: no-wrap;
+			width: 900px;
+		}
+
+		.copyButton {
+			padding: 12px;
+			border-radius: 12px;
+			background-color: $green;
+			width: auto;
+			border: none;
+			cursor: pointer;
+			transition: 0.3s;
+
+			&:hover {
+				opacity: 0.8;
+			}
+		}
+
+		.empty {
+			font-size: 30px;
+		}
+	}
+
+	.copied {
+		font-size: 30px;
+		height: 34.5px;
+	}
+
+	.genButton {
+		margin-top: 50px;
+	}
+}

@@ -1,0 +1,29 @@
+@import '../../styles/variables.scss';
+
+.notFoundPage {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	max-width: 900px;
+	height: 100%;
+
+	h2 {
+		font-size: 128px;
+		font-weight: 700;
+		color: $black;
+		margin-bottom: 20px;
+	}
+
+	p {
+		font-size: 40px;
+		font-weight: 700;
+		text-align: center;
+		margin-bottom: 50px;
+	}
+
+	button {
+		width: auto;
+		padding: 10px 80px;
+	}
+}

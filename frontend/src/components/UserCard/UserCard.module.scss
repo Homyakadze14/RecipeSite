@@ -1,0 +1,94 @@
+@import './../../styles/variables.scss';
+
+.userCard {
+	display: flex;
+	flex-direction: row;
+	height: 300px;
+	margin-bottom: 30px;
+	width: 900px;
+
+	img {
+		width: 300px;
+		height: 300px;
+		border-radius: 12px;
+		margin-right: 38px;
+		object-fit: cover;
+	}
+
+	.infoContainer {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		width: 562px;
+	}
+
+	.nameAndButtonContainer {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		width: 100%;
+		align-items: center;
+		margin-bottom: 16px;
+
+		div {
+			display: flex;
+			flex-direction: row;
+			justify-content: space-between;
+			gap: 20px;
+			width: 100%;
+
+			span {
+				font-size: 40px;
+				font-weight: 700;
+			}
+
+			.subscribeButton {
+				width: 180px;
+				font-size: 14px;
+				text-transform: uppercase;
+				padding: 10px 20px;
+				border-radius: 8px;
+				letter-spacing: 3px;
+				font-weight: 500;
+				background-color: $brightRed;
+			}
+		}
+
+		.editButton {
+			width: 40px;
+			height: 40px;
+			background-color: transparent;
+			border: none;
+			transition: 0.3s;
+
+			&:hover {
+				opacity: 0.6;
+				cursor: pointer;
+			}
+		}
+	}
+
+	p {
+		font-size: 25px;
+		min-height: 234px;
+		overflow-y: auto;
+		word-break: break-word;
+		overflow-wrap: break-word;
+		hyphens: auto;
+	}
+
+	h3 {
+		margin-bottom: 20px;
+	}
+
+	.changePasswordContainer {
+		display: flex;
+		align-items: center;
+		gap: 20px;
+		margin-bottom: 30px;
+	}
+
+	.saveButton {
+		background-color: $green;
+	}
+}

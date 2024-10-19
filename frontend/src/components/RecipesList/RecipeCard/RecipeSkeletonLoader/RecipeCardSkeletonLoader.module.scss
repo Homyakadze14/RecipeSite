@@ -1,0 +1,36 @@
+.container {
+	display: flex;
+	flex-direction: row;
+	margin-bottom: 30px;
+}
+
+.image {
+	margin-right: 10px;
+}
+
+.infoContainer {
+	display: flex;
+	flex-direction: column;
+	padding: 0 20px;
+	width: 650px;
+}
+
+.title {
+	font-size: 48px;
+	margin-bottom: 10px;
+}
+
+.tagsContainer {
+	display: flex;
+	justify-content: flex-start;
+	align-items: center;
+	height: 20px;
+}
+
+.tag {
+	margin-right: 20px;
+}
+
+.description {
+	margin-top: 10px;
+}
