@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { create } from 'zustand';
+import { baseUrl } from '../auth/useAuthStore';
 import { handleError } from '../recipes/useRecipesStore';
 
 export interface IUseTokensStore {
@@ -7,8 +8,6 @@ export interface IUseTokensStore {
 	setToken: (token: string) => void;
 	getToken: () => void;
 }
-
-const baseUrl = 'http://localhost:8080/api/v1';
 
 export const useTokenStore = create<IUseTokensStore>(set => ({
 	token: '',

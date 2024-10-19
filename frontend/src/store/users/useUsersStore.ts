@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import Cookies from 'js-cookie';
 import { NavigateFunction } from 'react-router-dom';
 import { create } from 'zustand';
-import { useAuthStore } from './../auth/useAuthStore';
+import { baseUrl, useAuthStore } from './../auth/useAuthStore';
 import { handleError, useRecipesStore } from './../recipes/useRecipesStore';
 
 export interface IAuthor {
@@ -83,8 +83,6 @@ export const deleteLastChar = (str: string) => {
 	}
 };
 
-const baseUrl = 'http://localhost:8080/api/v1/user';
-
 export const useUsersStore = create<IUseUsersStore>(set => ({
 	user: {} as IUser,
 	setUser: (user: IUser) => set({ user }),
@@ -106,7 +104,7 @@ export const useUsersStore = create<IUseUsersStore>(set => ({
 
 	getUser: async login => {
 		try {
-			const response = await axios.get(`${baseUrl}/${login}`, {
+			const response = await axios.get(`${baseUrl}/user/${login}`, {
 				withCredentials: true,
 			});
 
@@ -139,7 +137,7 @@ export const useUsersStore = create<IUseUsersStore>(set => ({
 			formData.append('about', editUserForm.about);
 			formData.append('icon', editUserForm.icon ?? '');
 
-			const response = await axios.put(`${baseUrl}/${login}`, formData, {
+			const response = await axios.put(`${baseUrl}/user/${login}`, formData, {
 				withCredentials: true,
 			});
 
@@ -188,7 +186,7 @@ export const useUsersStore = create<IUseUsersStore>(set => ({
 	editPassword: async (login, password, navigate) => {
 		try {
 			const response = await axios.put(
-				`${baseUrl}/${login}/password`,
+				`${baseUrl}/user/${login}/password`,
 				{ password },
 				{ withCredentials: true }
 			);
@@ -219,7 +217,7 @@ export const useUsersStore = create<IUseUsersStore>(set => ({
 	subscribe: async login => {
 		try {
 			const response = await axios.post(
-				`${baseUrl}/${login}/subscribe`,
+				`${baseUrl}/user/${login}/subscribe`,
 				{},
 				{ withCredentials: true }
 			);
@@ -237,7 +235,7 @@ export const useUsersStore = create<IUseUsersStore>(set => ({
 	unsubscribe: async login => {
 		try {
 			const response = await axios.post(
-				`${baseUrl}/${login}/unsubscribe`,
+				`${baseUrl}/user/${login}/unsubscribe`,
 				{},
 				{ withCredentials: true }
 			);

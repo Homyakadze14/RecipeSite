@@ -3,6 +3,7 @@ import { NavigateFunction } from 'react-router-dom';
 import { create } from 'zustand';
 import { IComment } from '../../components/CommentsList/Comment/Comment';
 import { deleteLastChar, IAuthor } from '../users/useUsersStore';
+import { baseUrl } from '../auth/useAuthStore';
 
 export interface IRecipe {
 	id: number;
@@ -145,8 +146,6 @@ const getErrorMessage = (statusCode: number) => {
 			return `Произошла неизвестная ошибка с кодом ${statusCode}.`;
 	}
 };
-
-const baseUrl = 'http://localhost:8080/api/v1';
 
 export const useRecipesStore = create<IUseRecipesStore>((set, get) => ({
 	isLoading: true,

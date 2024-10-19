@@ -38,7 +38,7 @@ export interface IUseAuthStore {
 	logout: (navigate: NavigateFunction) => void;
 }
 
-const baseUrl = 'http://localhost:8080/api/v1/auth';
+export const baseUrl = 'https://cookhub.space/api/v1';
 
 export const useAuthStore = create<IUseAuthStore>(set => ({
 	email: '',
@@ -59,7 +59,7 @@ export const useAuthStore = create<IUseAuthStore>(set => ({
 		e.preventDefault();
 
 		try {
-			const response = await axios.post(`${baseUrl}/signin`, {
+			const response = await axios.post(`${baseUrl}/auth/signin`, {
 				email,
 				password,
 			});
@@ -93,7 +93,7 @@ export const useAuthStore = create<IUseAuthStore>(set => ({
 	signUp: async (e, email, login, password, navigate, signIn) => {
 		e.preventDefault();
 		try {
-			const response = await axios.post(`${baseUrl}/signup`, {
+			const response = await axios.post(`${baseUrl}/auth/signup`, {
 				email,
 				login,
 				password,
@@ -116,7 +116,7 @@ export const useAuthStore = create<IUseAuthStore>(set => ({
 	logout: async navigate => {
 		try {
 			const response = await axios.post(
-				`${baseUrl}/logout`,
+				`${baseUrl}/auth/logout`,
 				{},
 				{ withCredentials: true }
 			);

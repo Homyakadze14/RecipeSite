@@ -21,12 +21,13 @@
 		object-fit: cover;
 	}
 
-	.infoContainer {
+	.infoContainer { 
 		display: flex;
 		flex-direction: column;
 		padding: 0 20px 0 20px;
 		height: 100%;
 		width: 100%;
+		max-width: 650px;
 
 		> div {
 			display: flex;
