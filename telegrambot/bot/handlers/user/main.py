@@ -22,7 +22,7 @@ async def start(message: Message, state: FSMContext):
                              f"Как только пользователь, на которого вы подписаны, выложит рецепт, я вам сообщу")
     else:
         await message.answer(f"Привет, <b>{message.from_user.first_name}</b>!\n"
-                             f"Пожалуйста, <a href="">сгенерируйте специальный код</a> для входа на сайте и пришлите его мне, "
+                             f"Пожалуйста, <a href=\"{environ.get('GEN_TOKEN_URL')}\">сгенерируйте специальный код</a> для входа на сайте и пришлите его мне, "
                              f"использовав команду /login")
 
 
