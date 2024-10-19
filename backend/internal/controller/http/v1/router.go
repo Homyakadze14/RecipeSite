@@ -33,7 +33,7 @@ func NewRouter(handler *gin.Engine,
 
 	// Set cors
 	corsConf := cors.DefaultConfig()
-	corsConf.AllowOrigins = []string{"http://localhost:5173"}
+	corsConf.AllowOrigins = []string{"http://localhost:5173", "http://147.45.235.14:5173"}
 	corsConf.AllowCredentials = true
 	handler.Use(cors.New(corsConf))
 
