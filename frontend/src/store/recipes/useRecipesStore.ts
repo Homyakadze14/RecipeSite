@@ -297,13 +297,7 @@ export const useRecipesStore = create<IUseRecipesStore>((set, get) => ({
 			if (response.status === 200) {
 				console.log('LOAD: ', get().isLoading);
 
-				set({ isLoading: false });
-
-				console.log('LOAD: ', get().isLoading);
-
-				set({
-					recipes: get().recipes.filter(recipe => recipe.id !== recipeId),
-				});
+				set({ isLoading: true });
 			}
 		} catch (err) {
 			console.log('Error deleting recipe: ', err);

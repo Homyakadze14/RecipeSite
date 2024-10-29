@@ -8,6 +8,8 @@ import styles from './HomePage.module.scss';
 export const HomePage = () => {
 	const recipes = useRecipesStore(state => state.recipes);
 
+	const isLoading = useRecipesStore(state => state.isLoading);
+
 	const [searchQuery, setSearchQuery] = useState('');
 	const [prevSearchQuery, setPrevSearchQuery] = useState('');
 
@@ -20,7 +22,7 @@ export const HomePage = () => {
 		});
 
 		setPrevSearchQuery(searchQuery);
-	}, [searchQuery]);
+	}, [searchQuery, isLoading]);
 
 	return (
 		<Layout>

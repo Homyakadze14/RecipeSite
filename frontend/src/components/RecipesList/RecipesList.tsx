@@ -99,18 +99,6 @@ export const RecipesList = ({
 							}}
 							mountOnEnter
 							unmountOnExit
-							onEnter={() => {
-								console.log('onEnter');
-							}}
-							onEntered={() => {
-								console.log('onEntered');
-							}}
-							onExit={() => {
-								console.log('onExit');
-							}}
-							onExited={() => {
-								console.log('onExited');
-							}}
 						>
 							<RecipeCard
 								id={item.id}

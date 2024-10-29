@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { IUseAuthStore } from '../../types/interfaces';
 import { handleError } from '../recipes/useRecipesStore';
 
-export const baseUrl = 'https://cookhub.space/api/v1';
+export const baseUrl = 'http://localhost:8080/api/v1';
 
 export const useAuthStore = create<IUseAuthStore>(set => ({
 	email: '',
