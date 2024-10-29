@@ -1,13 +1,8 @@
 import axios from 'axios';
 import { create } from 'zustand';
+import { IUseTokensStore } from '../../types/interfaces';
 import { baseUrl } from '../auth/useAuthStore';
 import { handleError } from '../recipes/useRecipesStore';
-
-export interface IUseTokensStore {
-	token: string;
-	setToken: (token: string) => void;
-	getToken: () => void;
-}
 
 export const useTokenStore = create<IUseTokensStore>(set => ({
 	token: '',

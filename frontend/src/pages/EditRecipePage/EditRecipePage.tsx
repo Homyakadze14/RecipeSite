@@ -7,13 +7,10 @@ import { TextField } from '../../components/TextField/TextField';
 import { Layout } from '../../layout/Layout';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { useRecipesStore } from '../../store/recipes/useRecipesStore';
+import { IEditRecipePage } from '../../types/interfaces';
 import styles from './EditRecipePage.module.scss';
 
-interface IEditRecipeProps {
-	recipeId: number;
-}
-
-export const EditRecipePage = ({ recipeId = 6 }: IEditRecipeProps) => {
+export const EditRecipePage = ({ recipeId }: IEditRecipePage) => {
 	const login = useAuthStore(state => state.login);
 
 	const isLoading = useRecipesStore(state => state.isLoading);
@@ -62,6 +59,8 @@ export const EditRecipePage = ({ recipeId = 6 }: IEditRecipeProps) => {
 		});
 	};
 
+	const TIME_FORMAT_REGEXP = /^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
+
 	const handleTimeChange = (
 		event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
 	) => {
@@ -71,15 +70,13 @@ export const EditRecipePage = ({ recipeId = 6 }: IEditRecipeProps) => {
 		});
 		if (event.target.value.length === 5) {
 			const inputValue = event.target.value;
-			const regExp = /^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
 
-			if (!regExp.test(inputValue)) {
+			if (!TIME_FORMAT_REGEXP.test(inputValue)) {
 				setEditRecipeForm({
 					...editRecipeForm,
 					need_time: '',
 				});
 
-				console.log('Invalid time format');
 				alert('Неверный формат! Введите время в формате HH:MM');
 				return;
 			}

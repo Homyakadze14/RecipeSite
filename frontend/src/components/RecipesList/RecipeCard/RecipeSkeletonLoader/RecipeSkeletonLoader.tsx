@@ -4,7 +4,7 @@ import styles from './RecipeCardSkeletonLoader.module.scss';
 
 export const RecipeCardSkeletonLoader = () => {
 	return (
-		<div className={styles.container}>
+		<div className={styles.loader}>
 			<Skeleton className={styles.image} height={250} width={250} />
 			<div className={styles.infoContainer}>
 				<Skeleton height={40} className={styles.title} />

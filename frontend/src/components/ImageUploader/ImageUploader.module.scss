@@ -1,0 +1,41 @@
+.container {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 20px;
+
+	.label {
+		font-size: 28px;
+	}
+
+	.labelWrapper {
+		cursor: pointer;
+
+		.imagePreview {
+			width: 100px;
+			height: 100px;
+			object-fit: cover;
+			border-radius: 12px;
+		}
+
+		.uploadButton {
+			width: 100px;
+			height: 100px;
+			border: 1px solid #000;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 12px;
+
+			.uploadButtonText {
+				font-size: 20px;
+				color: #00000091;
+			}
+		}
+	}
+
+	.input {
+		display: none;
+	}
+}

@@ -1,115 +1,14 @@
 import axios, { AxiosError } from 'axios';
-import { NavigateFunction } from 'react-router-dom';
 import { create } from 'zustand';
-import { IComment } from '../../components/CommentsList/Comment/Comment';
-import { deleteLastChar, IAuthor } from '../users/useUsersStore';
+import {
+	IAuthor,
+	IComment,
+	IRecipe,
+	IUseRecipesStore,
+} from '../../types/interfaces';
+import { Filter } from '../../types/types';
+import { deleteLastChar } from '../../utils/utils';
 import { baseUrl } from '../auth/useAuthStore';
-
-export interface IRecipe {
-	id: number;
-	about: string;
-	complexity: 1 | 2 | 3;
-	created_at: string;
-	ingridients: string;
-	instructions: string;
-	need_time: string;
-	title: string;
-	photos_urls: string;
-	updated_at: string;
-	author: IAuthor;
-}
-
-type Filter = {
-	limit?: number;
-	offset?: number;
-	order_by?: -1 | 1;
-	order_field?: string;
-	query?: string;
-};
-
-export interface IUseRecipesStore {
-	isLoading: boolean;
-	setIsLoading: (isLoading: boolean) => void;
-	isLiked: boolean;
-	setIsLiked: (isLiked: boolean) => void;
-	likes_count: number;
-	setLikesCount: (likes_count: number) => void;
-	recipe: IRecipe;
-	setRecipe: (recipe: IRecipe) => void;
-	recipes: IRecipe[];
-	setRecipes: (recipes: IRecipe[]) => void;
-	recipeId: number;
-	setRecipeId: (recipeId: number) => void;
-
-	comments: IComment[];
-	setComments: (comments: IComment[]) => void;
-
-	text: string;
-	setText: (text: string) => void;
-
-	createRecipeForm: {
-		title: string;
-		about: string;
-		ingridients: string;
-		author: IAuthor;
-		instructions: string;
-		complexity: string | number;
-		need_time: string;
-		selectedImage: any;
-	};
-	setCreateRecipeForm: (form: any) => void;
-
-	editRecipeForm: {
-		photos: File | null;
-		title: string;
-		about: string;
-		ingridients: string;
-		instructions: string;
-		complexity: string | number;
-		need_time: string;
-	};
-	setEditRecipeForm: (form: any) => void;
-
-	createRecipe: (
-		e: React.MouseEvent<HTMLButtonElement>,
-		login: string,
-		createRecipeForm: {
-			title: string;
-			about: string;
-			ingridients: string;
-			author: IAuthor;
-			instructions: string;
-			complexity: string | number;
-			need_time: string;
-			selectedImage: any;
-		},
-		navigate: NavigateFunction
-	) => void;
-
-	getAllRecipes: () => void;
-	getFilteredRecipes: (filter: Filter) => void;
-	getRecipeAndComments: (recipeId: number) => Promise<void>;
-	getAuthor: (login: string) => Promise<string>;
-	editRecipe: (
-		e: React.MouseEvent<HTMLButtonElement>,
-		login: string,
-		recipeId: number,
-		editRecipeForm: any,
-		navigate: NavigateFunction
-	) => void;
-	deleteRecipe: (login: string, recipeId: number) => void;
-
-	likeRecipe: (recipeId: number) => void;
-	unlikeRecipe: (recipeId: number) => void;
-
-	createComment: (
-		e: React.MouseEvent<HTMLButtonElement>,
-		recipeId: number,
-		text: string
-	) => void;
-	editComment: (commentId: number, text: string) => void;
-	deleteComment: (commentId: number, recipeId: number) => void;
-}
 
 export const handleError = (error: unknown) => {
 	if (axios.isAxiosError(error)) {
@@ -279,6 +178,7 @@ export const useRecipesStore = create<IUseRecipesStore>((set, get) => ({
 				}));
 
 				set({ recipes: updatedRecipes });
+				set({ isLoading: false });
 			}
 		} catch (err) {
 			console.log('Error getting filtered recipes: ', err);
@@ -397,7 +297,7 @@ export const useRecipesStore = create<IUseRecipesStore>((set, get) => ({
 			if (response.status === 200) {
 				console.log('LOAD: ', get().isLoading);
 
-				set({ isLoading: true });
+				set({ isLoading: false });
 
 				console.log('LOAD: ', get().isLoading);
 

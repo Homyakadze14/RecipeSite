@@ -1,7 +1,4 @@
-export interface IArrowIcon {
-	direction: 'left' | 'right';
-	fill?: string;
-}
+import { IArrowIcon } from '../../types/interfaces';
 
 export const ArrowIcon = ({ direction, fill = '#FFFFFF' }: IArrowIcon) => {
 	return (

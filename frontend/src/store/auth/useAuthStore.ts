@@ -1,44 +1,10 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { NavigateFunction } from 'react-router-dom';
 import { create } from 'zustand';
+import { IUseAuthStore } from '../../types/interfaces';
 import { handleError } from '../recipes/useRecipesStore';
 
-export interface IUseAuthStore {
-	email: string;
-	setEmail: (email: string) => void;
-	login: string;
-	setLogin: (login: string) => void;
-	password: string;
-	setPassword: (password: string) => void;
-	isAuth: boolean;
-	setIsAuth: (isAuth: boolean) => void;
-	currentUserLogin: string;
-	setCurrentUserLogin: (login: string) => void;
-
-	signUp: (
-		e: React.MouseEvent<HTMLButtonElement>,
-		email: string,
-		login: string,
-		password: string,
-		navigate: (to: string) => void,
-		signIn: (
-			e: React.MouseEvent<HTMLButtonElement>,
-			email: string,
-			password: string,
-			navigate: (to: string) => void
-		) => void
-	) => void;
-	signIn: (
-		e: React.MouseEvent<HTMLButtonElement>,
-		email: string,
-		password: string,
-		navigate: (to: string) => void
-	) => void;
-	logout: (navigate: NavigateFunction) => void;
-}
-
-export const baseUrl = 'https://cookhub.space/api/v1';
+export const baseUrl = 'http://localhost:8080/api/v1';
 
 export const useAuthStore = create<IUseAuthStore>(set => ({
 	email: '',
@@ -68,14 +34,14 @@ export const useAuthStore = create<IUseAuthStore>(set => ({
 
 			if (response.status === 200) {
 				set({ isAuth: true });
-				localStorage.setItem('isAuth', JSON.stringify(true));
 				set({ login: response.data.login });
+
+				localStorage.setItem('isAuth', JSON.stringify(true));
+				localStorage.setItem('login', response.data.login);
 
 				Cookies.set('session_id', response.data.session_id, {
 					expires: 3,
 				});
-
-				localStorage.setItem('login', response.data.login);
 
 				navigate(`/user/${response.data.login}`);
 
@@ -99,7 +65,7 @@ export const useAuthStore = create<IUseAuthStore>(set => ({
 				password,
 			});
 
-			console.log('up res', response);
+			console.log('up res: ', response);
 
 			if (response.status === 200) {
 				set({ login: login });

@@ -1,10 +1,5 @@
 import styles from './Tabs.module.scss';
-
-export interface ITabs {
-	tabs: { [key: string]: string };
-	selectedTab: string;
-	setSelectedTab: (tab: string) => void;
-}
+import { ITabs } from '../../types/interfaces';
 
 export const Tabs = ({ tabs, selectedTab, setSelectedTab }: ITabs) => {
 	return (

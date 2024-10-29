@@ -24,6 +24,16 @@
 
 			span {
 				font-size: 28px;
+				word-break: break-word;
+				hyphens: auto;
+				margin-right: 8px;
+				font-weight: 700;
+
+				@media (max-width: 600px) {
+					& {
+						font-size: 22px;
+					}
+				}
 			}
 		}
 
@@ -41,6 +51,12 @@
 					transform: scale(1.1);
 				}
 			}
+
+			@media (max-width: 600px) {
+				& {
+					flex-direction: column-reverse;
+				}
+			}
 		}
 	}
 
@@ -48,6 +64,12 @@
 		font-size: 24px;
 		word-break: break-word;
 		hyphens: auto;
+	}
+
+	.modalContainer {
+		display: flex;
+		flex-direction: column;
+		max-width: 430px;
 	}
 
 	h2 {

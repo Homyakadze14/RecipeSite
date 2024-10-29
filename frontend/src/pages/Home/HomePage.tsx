@@ -24,18 +24,22 @@ export const HomePage = () => {
 
 	return (
 		<Layout>
-			<div className={styles.searchInputContainer}>
-				<SearchInput
-					value={searchQuery}
-					onChange={(e: ChangeEvent<HTMLInputElement>) =>
-						setSearchQuery(e.target.value)
-					}
-				/>
+			<div className={styles.page}>
+				<div className={styles.searchInputContainer}>
+					<SearchInput
+						value={searchQuery}
+						onChange={(e: ChangeEvent<HTMLInputElement>) =>
+							setSearchQuery(e.target.value)
+						}
+					/>
+				</div>
+				<div style={{ width: '100%', maxWidth: '100%' }}>
+					<RecipesList
+						data={recipes}
+						isSearchQueryChanged={searchQuery !== prevSearchQuery}
+					/>
+				</div>
 			</div>
-			<RecipesList
-				data={recipes}
-				isSearchQueryChanged={searchQuery !== prevSearchQuery}
-			/>
 		</Layout>
 	);
 };

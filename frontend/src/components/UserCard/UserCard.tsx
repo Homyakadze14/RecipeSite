@@ -3,18 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { EditIcon } from '../../assets/icons/EditIcon';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { useUsersStore } from '../../store/users/useUsersStore';
+import { IUserCard } from '../../types/interfaces';
 import { Button } from '../Button/Button';
 import { ImageUploader } from '../ImageUploader/ImageUploader';
 import { Modal } from '../Modal/Modal';
 import { TextField } from '../TextField/TextField';
 import styles from './UserCard.module.scss';
 import { UserCardSkeletonLoader } from './UserCardSkeletonLoader/UserCardSkeletonLoader';
-
-export interface IUserCard {
-	avatarSrc: string;
-	name: string;
-	description: string;
-}
 
 export const UserCard = ({ avatarSrc, name, description }: IUserCard) => {
 	const user = useUsersStore(state => state.user);
@@ -43,10 +38,10 @@ export const UserCard = ({ avatarSrc, name, description }: IUserCard) => {
 	useEffect(() => console.log('params login: ', paramsLogin), [paramsLogin]);
 
 	useEffect(() => {
-		setTimeout(() => {
+		if (name && avatarSrc && description) {
 			setIsLoading(false);
-		}, 200);
-	}, []);
+		}
+	}, [name, avatarSrc, description]);
 
 	useEffect(() => {
 		setEditUserForm({
@@ -89,98 +84,123 @@ export const UserCard = ({ avatarSrc, name, description }: IUserCard) => {
 						<img src={avatarSrc} />
 					</div>
 					<div className={styles.infoContainer}>
-						<div className={styles.nameAndButtonContainer}>
-							<div>
-								<span>{name}</span>
-								{name !== login && (
+						{name === login ? (
+							<div className={styles.nameAndEditButtonContainer}>
+								<div className={styles.editInner}>
+									<span className={styles.nameEdit}>{name}</span>
+									<button
+										className={styles.editButton}
+										onClick={() => setIsEditModalActive(true)}
+									>
+										<EditIcon />
+									</button>
+								</div>
+							</div>
+						) : (
+							<div className={styles.nameAndSubscribeButtonContainer}>
+								<div className={styles.subscribeInner}>
+									<span className={styles.nameSubscribe}>{name}</span>
 									<Button
 										className={styles.subscribeButton}
 										onClick={handleSubscribe}
 									>
 										{user.is_subscribed ? 'Отписаться' : 'Подписаться'}
 									</Button>
-								)}
+								</div>
 							</div>
-							{name === login && (
-								<button
-									className={styles.editButton}
-									onClick={() => setIsEditModalActive(true)}
+						)}
+
+						<p
+							className={
+								login === name
+									? styles.descriptionEdit
+									: styles.descriptionSubscribe
+							}
+						>
+							{description}
+						</p>
+
+						{name !== login && (
+							<div style={{ display: 'grid', placeItems: 'center' }}>
+								<Button
+									className={styles.subscribeButtonBottom}
+									onClick={handleSubscribe}
 								>
-									<EditIcon />
-								</button>
-							)}
-						</div>
-						<p>{description}</p>
+									{user.is_subscribed ? 'Отписаться' : 'Подписаться'}
+								</Button>
+							</div>
+						)}
 					</div>
 				</>
 			)}
 			{isLoading && <UserCardSkeletonLoader />}
 			{isEditModalActive && (
 				<Modal isActive={isEditModalActive} setIsActive={setIsEditModalActive}>
-					<h3 style={{ textAlign: 'center', fontSize: '40px' }}>
-						Изменить данные
-					</h3>
-					<form>
-						<ImageUploader
-							label='Аватар:'
-							selectedImage={editUserForm.icon}
-							onImageUpload={handleImageUpload}
-						/>
-						<TextField
-							direction='row'
-							label='Ваше имя:'
-							field='input'
-							value={editUserForm.login}
-							placeholder='Введите ваше имя'
-							onChange={e =>
-								setEditUserForm({ ...editUserForm, login: e.target.value })
-							}
-						/>
-						<TextField
-							direction='column'
-							label='Описание:'
-							field='textarea'
-							value={editUserForm.about}
-							placeholder='Напишите что-нибудь о себе'
-							onChange={e =>
-								setEditUserForm({ ...editUserForm, about: e.target.value })
-							}
-						/>
-						<div className={styles.changePasswordContainer}>
-							<label className={styles.label} style={{ fontSize: '28px' }}>
-								Пароль:
-							</label>
-							<Button onClick={() => navigate('/edit_password')}>
-								Изменить пароль
-							</Button>
-						</div>
+					<div className={styles.modalContainer}>
+						<h3>Изменить данные</h3>
+						<form>
+							<ImageUploader
+								label='Аватар:'
+								selectedImage={editUserForm.icon}
+								onImageUpload={handleImageUpload}
+							/>
+							<TextField
+								className={styles.nameField}
+								direction='row'
+								label='Ваше имя:'
+								field='input'
+								value={editUserForm.login}
+								placeholder='Введите ваше имя'
+								onChange={e =>
+									setEditUserForm({ ...editUserForm, login: e.target.value })
+								}
+							/>
+							<TextField
+								direction='column'
+								label='Описание:'
+								field='textarea'
+								value={editUserForm.about}
+								placeholder='Напишите что-нибудь о себе'
+								onChange={e =>
+									setEditUserForm({ ...editUserForm, about: e.target.value })
+								}
+							/>
+							<div className={styles.changePasswordContainer}>
+								<label className={styles.label} style={{ fontSize: '28px' }}>
+									Пароль:
+								</label>
+								<Button onClick={() => navigate('/edit_password')}>
+									Изменить пароль
+								</Button>
+							</div>
 
-						<Button
-							className={styles.saveButton}
-							disabled={Object.entries(editUserForm).some(([key, value]) => {
-								if (key !== 'about') !value;
-							})}
-							title={
-								Object.entries(editUserForm).some(([key, value]) => {
+							<Button
+								className={styles.saveButton}
+								disabled={Object.entries(editUserForm).some(([key, value]) => {
 									if (key !== 'about') !value;
-								})
-									? 'Имя и аватар должны быть заполнены'
-									: ''
-							}
-							onClick={e => {
-								setIsEditModalActive(false);
-								editUser(
-									e,
-									login,
-									editUserForm,
-									navigate,
-									setIsEditModalActive
-								);
-							}}
-						>
-							Применить
-						</Button>
-					</form>
+								})}
+								title={
+									Object.entries(editUserForm).some(([key, value]) => {
+										if (key !== 'about') !value;
+									})
+										? 'Имя и аватар должны быть заполнены'
+										: ''
+								}
+								onClick={e => {
+									setIsEditModalActive(false);
+									editUser(
+										e,
+										login,
+										editUserForm,
+										navigate,
+										setIsEditModalActive
+									);
+								}}
+							>
+								Применить
+							</Button>
+						</form>
+					</div>
 				</Modal>
 			)}
 		</div>

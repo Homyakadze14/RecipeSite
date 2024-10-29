@@ -2,18 +2,7 @@ import { useState } from 'react';
 import { HideIcon } from '../../assets/icons/HideIcon';
 import { ShowIcon } from '../../assets/icons/ShowIcon';
 import styles from './TextField.module.scss';
-
-export interface ITextField {
-	direction: 'row' | 'column';
-	label: string;
-	field: 'input' | 'textarea';
-	value: string;
-	onChange: (
-		event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-	) => void;
-	placeholder?: string;
-	type?: string;
-}
+import { ITextField } from '../../types/interfaces';
 
 export const TextField = ({
 	direction,
@@ -23,15 +12,19 @@ export const TextField = ({
 	onChange,
 	placeholder,
 	type = 'text',
+	className,
 }: ITextField) => {
 	const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
 	return (
-		<div className={[styles.textField, styles[direction]].join(' ')}>
+		<div className={[styles.textField, styles[direction], className].join(' ')}>
 			<label className={styles.label}>{label}</label>
 			{field === 'input' && (
 				<input
-					className={styles.input}
+					className={[
+						styles.input,
+						type === 'password' ? styles.passwordInput : '',
+					].join(' ')}
 					value={value}
 					onChange={onChange}
 					placeholder={placeholder}

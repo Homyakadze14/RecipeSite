@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import { ArrowIcon } from '../../assets/icons/ArrowIcon';
 import { RecipeCardDetailPage } from '../../pages/RecipeCardDetail/RecipeCardDetailPage';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { useRecipesStore } from '../../store/recipes/useRecipesStore';
-import { IRecipe } from '../../store/users/useUsersStore';
-import { IRecipeCardDetail } from '../../types/interfaces';
+import {
+	IRecipe,
+	IRecipeCardDetail,
+	IRecipesList,
+} from '../../types/interfaces';
 import { RecipeCard } from './RecipeCard/RecipeCard';
 import { RecipeCardSkeletonLoader } from './RecipeCard/RecipeSkeletonLoader/RecipeSkeletonLoader';
 import styles from './RecipesList.module.scss';
@@ -16,19 +20,12 @@ export const RecipesList = ({
 	isSearchQueryChanged = false,
 	isTabChanged,
 	listStartY = 0,
-}: {
-	data: IRecipe[];
-	noDataText?: string;
-	isSearchQueryChanged?: boolean;
-	isTabChanged?: boolean;
-	listStartY?: number;
-}) => {
+}: IRecipesList) => {
 	const login = useAuthStore(state => state.login);
 
 	const deleteRecipe = useRecipesStore(state => state.deleteRecipe);
 
 	const isLoading = useRecipesStore(state => state.isLoading);
-	const setIsLoading = useRecipesStore(state => state.setIsLoading);
 
 	const setRecipe = useRecipesStore(state => state.setRecipe);
 
@@ -86,58 +83,61 @@ export const RecipesList = ({
 		console.log('paramsLogin in list: ', paramsLogin);
 	}, [isSearchQueryChanged, isTabChanged, data.length, paramsLogin]);
 
-	useEffect(() => {
-		console.log('data: ', data);
-
-		const timer = setTimeout(() => {
-			setIsLoading(false);
-		}, 1000);
-
-		return () => {
-			clearTimeout(timer);
-		};
-	}, [data]);
-
 	return (
-		<>
+		<div className={styles.container}>
 			{!selectedRecipe && currentRecipes.length > 0 && (
-				<ul className={styles.list}>
-					{!isLoading
-						? currentRecipes.map(item => (
-								<RecipeCard
-									key={item.id + item.title}
-									id={item.id}
-									imageSrc={item.photos_urls}
-									title={item.title}
-									author={item.author}
-									description={item.about}
-									time={item.need_time}
-									starsAmount={item.complexity}
-									onClick={() => {
-										handleCardClick({
-											...item,
-											author: item.author,
-											ingredients: item.ingridients,
-											instructions: item.instructions,
-										});
-									}}
-									onDelete={() => {
-										deleteRecipe(login, item.id);
-										console.log(
-											'click',
-											'login: ',
-											login,
-											'item.id: ',
-											item.id
-										);
-									}}
-								/>
-						  ))
-						: [...Array(recipesPerPage)].map((_, i) => (
-								<RecipeCardSkeletonLoader key={i} />
-						  ))}
-				</ul>
+				<TransitionGroup className={styles.list} component='ul'>
+					{currentRecipes.map(item => (
+						<CSSTransition
+							key={item.id}
+							timeout={500}
+							classNames={{
+								enter: styles.fadeEnter,
+								enterActive: styles.fadeEnterActive,
+								exit: styles.fadeExit,
+								exitActive: styles.fadeExitActive,
+							}}
+							mountOnEnter
+							unmountOnExit
+							onEnter={() => {
+								console.log('onEnter');
+							}}
+							onEntered={() => {
+								console.log('onEntered');
+							}}
+							onExit={() => {
+								console.log('onExit');
+							}}
+							onExited={() => {
+								console.log('onExited');
+							}}
+						>
+							<RecipeCard
+								id={item.id}
+								imageSrc={item.photos_urls}
+								title={item.title}
+								author={item.author}
+								description={item.about}
+								time={item.need_time}
+								starsAmount={item.complexity}
+								onClick={() => {
+									handleCardClick({
+										...item,
+										ingredients: item.ingridients,
+									});
+								}}
+								onDelete={() => deleteRecipe(login, item.id)}
+							/>
+						</CSSTransition>
+					))}
+				</TransitionGroup>
 			)}
+
+			{isLoading &&
+				[...Array(recipesPerPage)].map((_, i) => (
+					<RecipeCardSkeletonLoader key={i} />
+				))}
+
 			{data.length > 0 && (
 				<div className={styles.paginationContainer}>
 					<button
@@ -165,9 +165,11 @@ export const RecipesList = ({
 				</div>
 			)}
 
-			{!data.length && <p className={styles.noDataText}>{noDataText}</p>}
+			{!data.length && !isLoading && (
+				<p className={styles.noDataText}>{noDataText}</p>
+			)}
 
 			{selectedRecipe && <RecipeCardDetailPage />}
-		</>
+		</div>
 	);
 };

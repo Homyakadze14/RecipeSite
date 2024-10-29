@@ -2,7 +2,7 @@
 
 .textField {
 	display: flex;
-	width: 600px;
+	width: 100%;
 	margin-bottom: 30px;
 	gap: 8px;
 
@@ -21,14 +21,24 @@
 	border: 1px solid $black;
 }
 
+.passwordInput {
+	padding-right: 44px;
+}
+
 .eyeButton {
 	position: absolute;
 	top: 21px;
-	right: 15px;
+	right: 10px;
 	transform: translateY(-50%);
-	background-color: transparent;
+	background-color: $white;
 	border: none;
 	cursor: pointer;
+
+	@media (max-width: 640px) {
+		& {
+			top: 62px;
+		}
+	}
 }
 
 .textarea {

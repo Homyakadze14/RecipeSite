@@ -1,18 +1,22 @@
-.container {
+.loader {
 	display: flex;
 	flex-direction: row;
 	margin-bottom: 30px;
+	max-width: 900px;
+	width: 100%;
 }
 
 .image {
 	margin-right: 10px;
+	border-radius: 10px;
 }
 
 .infoContainer {
 	display: flex;
 	flex-direction: column;
 	padding: 0 20px;
-	width: 650px;
+	max-width: 650px;
+	width: 100%;
 }
 
 .title {
@@ -33,4 +37,37 @@
 
 .description {
 	margin-top: 10px;
+}
+
+@media (max-width: 580px) {
+	.loader {
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.image {
+		margin-right: 0;
+		margin-bottom: 20px;
+	}
+
+	.infoContainer {
+		width: 100%;
+		padding: 0;
+	}
+
+	.tagsContainer {
+		justify-content: center;
+	}
+}
+
+@media (max-width: 580px) {
+	.infoContainer {
+		max-width: 450px;
+	}
+}
+
+@media (max-width: 410px) {
+	.infoContainer {
+		width: calc(100vw - 40px);
+	}
 }

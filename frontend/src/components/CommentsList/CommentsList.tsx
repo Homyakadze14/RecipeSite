@@ -1,9 +1,6 @@
-import { Comment, IComment } from './Comment/Comment';
+import { ICommentsList } from '../../types/interfaces';
+import { Comment } from './Comment/Comment';
 import styles from './CommentsList.module.scss';
-
-export interface ICommentsList {
-	comments: IComment[];
-}
 
 export const CommentsList = ({ comments }: ICommentsList) => {
 	return (

@@ -1,96 +1,19 @@
 import axios, { AxiosError } from 'axios';
 import Cookies from 'js-cookie';
-import { NavigateFunction } from 'react-router-dom';
 import { create } from 'zustand';
+import { IRecipe, IUser, IUseUsersStore } from '../../types/interfaces';
+import { deleteLastChar } from '../../utils/utils';
 import { baseUrl, useAuthStore } from './../auth/useAuthStore';
 import { handleError, useRecipesStore } from './../recipes/useRecipesStore';
 
-export interface IAuthor {
-	login: string;
-	icon_url: string;
-}
-
-export interface IRecipe {
-	id: number;
-	about: string;
-	complexity: 1 | 2 | 3;
-	created_at: string;
-	creator_user_id?: number;
-	ingridients: string;
-	instructions: string;
-	need_time: string;
-	title: string;
-	photos_urls: string;
-	updated_at: string;
-	author: IAuthor;
-}
-
-export interface IUser {
-	id: number;
-	login: string;
-	about: string;
-	icon_url: string;
-	created_at: string;
-	recipies: IRecipe[];
-	liked_recipies: IRecipe[];
-	is_subscribed: boolean;
-}
-
-export interface IUseUsersStore {
-	user: IUser;
-	setUser: (user: IUser) => void;
-	users: IUser[];
-	setUsers: (users: IUser[]) => void;
-
-	paramsLogin: string;
-	setParamsLogin: (login: string) => void;
-
-	editUserForm: {
-		icon: any;
-		login: string;
-		about: string;
-	};
-	setEditUserForm: (form: any) => void;
-
-	password: string;
-	setPassword: (password: string) => void;
-
-	getUser: (login: string) => void;
-
-	editUser: (
-		e: React.MouseEvent<HTMLButtonElement>,
-		login: string,
-		editUserForm: { icon: File | null; login: string; about: string },
-		navigate: NavigateFunction,
-		setIsEditModalVisible: (isEditModalVisible: boolean) => void
-	) => void;
-
-	editPassword: (
-		login: string,
-		newPassword: string,
-		navigate: NavigateFunction
-	) => void;
-
-	subscribe: (login: string) => void;
-	unsubscribe: (login: string) => void;
-}
-
-export const deleteLastChar = (str: string) => {
-	if (str.slice(-1) == ';') {
-		return str.slice(0, -1);
-	} else {
-		return str;
-	}
-};
-
 export const useUsersStore = create<IUseUsersStore>(set => ({
 	user: {} as IUser,
-	setUser: (user: IUser) => set({ user }),
+	setUser: user => set({ user }),
 	users: [],
-	setUsers: (users: IUser[]) => set({ users }),
+	setUsers: users => set({ users }),
 
 	paramsLogin: localStorage.getItem('paramsLogin') || '',
-	setParamsLogin: (login: string) => set({ paramsLogin: login }),
+	setParamsLogin: login => set({ paramsLogin: login }),
 
 	editUserForm: {
 		icon: null,
@@ -100,7 +23,7 @@ export const useUsersStore = create<IUseUsersStore>(set => ({
 	setEditUserForm: form => set({ editUserForm: form }),
 
 	password: '',
-	setPassword: (password: string) => set({ password }),
+	setPassword: password => set({ password }),
 
 	getUser: async login => {
 		try {
@@ -119,6 +42,7 @@ export const useUsersStore = create<IUseUsersStore>(set => ({
 						photos_urls: deleteLastChar(recipe.photos_urls),
 					})),
 				};
+
 				set({ user: updatedUser });
 			}
 

@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChefIcon } from '../../../assets/icons/ChefIcon';
 import { DeleteIcon } from '../../../assets/icons/DeleteIcon';
@@ -7,6 +6,7 @@ import { TimeIcon } from '../../../assets/icons/TimeIcon';
 import { useAuthStore } from '../../../store/auth/useAuthStore';
 import { useRecipesStore } from '../../../store/recipes/useRecipesStore';
 import { IRecipeCard } from '../../../types/interfaces';
+import { addNewLines } from '../../../utils/utils';
 import { Complexity } from '../../Complexity/Complexity';
 import styles from './RecipeCard.module.scss';
 
@@ -21,22 +21,17 @@ export const RecipeCard = ({
 	onClick,
 	onDelete,
 }: IRecipeCard) => {
-	const navigation = useNavigate();
-
 	const login = useAuthStore(state => state.login);
 
 	const setRecipeId = useRecipesStore(state => state.setRecipeId);
 
-	useEffect(() => {
-		console.log('matching names: ', login, author);
-		console.log('id: ', id);
-	}, [id]);
+	const navigate = useNavigate();
 
 	const handleEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
+		e.stopPropagation();
 		localStorage.setItem('recipeId', String(id));
 		setRecipeId(id);
-		e.stopPropagation();
-		navigation(`/edit_recipe/${id}`);
+		navigate(`/edit_recipe/${id}`);
 	};
 
 	const handleDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -48,10 +43,10 @@ export const RecipeCard = ({
 		<li className={styles.card} onClick={onClick}>
 			<img src={imageSrc} />
 			<div className={styles.infoContainer}>
-				<div>
+				<div className={styles.titleAndButtonsContainer}>
 					<span className={styles.title}>{title}</span>
 					{author.login === login && (
-						<div>
+						<div className={styles.buttons}>
 							<button onClick={handleEdit}>
 								<EditIcon />
 							</button>
@@ -71,7 +66,7 @@ export const RecipeCard = ({
 						<Complexity starsAmount={starsAmount} />
 					</div>
 				</div>
-				<p className={styles.description}>{description}</p>
+				<p className={styles.description}>{addNewLines(description)}</p>
 			</div>
 		</li>
 	);

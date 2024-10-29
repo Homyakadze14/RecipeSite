@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/Button/Button';
 import { Complexity } from '../../components/Complexity/Complexity';
 import { ImageUploader } from '../../components/ImageUploader/ImageUploader';
@@ -7,7 +8,6 @@ import { Layout } from '../../layout/Layout';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { useRecipesStore } from '../../store/recipes/useRecipesStore';
 import styles from './CreateRecipePage.module.scss';
-import { useNavigate } from 'react-router-dom';
 
 export const CreateRecipePage = () => {
 	const createRecipeForm = useRecipesStore(state => state.createRecipeForm);
@@ -80,6 +80,7 @@ export const CreateRecipePage = () => {
 				<h2>Создание рецепта</h2>
 				<form>
 					<TextField
+						className={styles.titleField}
 						direction='row'
 						label='Название:'
 						field='input'

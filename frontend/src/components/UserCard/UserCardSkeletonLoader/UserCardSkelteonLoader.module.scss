@@ -2,7 +2,8 @@
 	display: flex;
 	flex-direction: row;
 	height: 300px;
-	width: 900px;
+	max-width: 900px;
+	width: 100%;
 
 	.avatar {
 		width: 300px;
@@ -15,17 +16,22 @@
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
+		max-width: 572px;
 		width: 100%;
+
+		@media (max-width: 400px) {
+			align-items: center;
+		}
 	}
 
 	.nameAndButtonContainer {
 		display: flex;
 		flex-direction: row;
 		justify-content: space-between;
-		align-items: center;
+		max-width: 572px;
 		width: 100%;
 		align-items: center;
-		margin-bottom: 20px;
+		margin-bottom: 16px;
 
 		.name {
 			width: 200px;
@@ -38,6 +44,12 @@
 			height: 40px;
 			border-radius: 8px;
 		}
+
+		@media (max-width: 400px) {
+			.editButton {
+				display: none;
+			}
+		}
 	}
 
 	.description {
@@ -45,5 +57,21 @@
 		height: 200px;
 		border-radius: 8px;
 		min-height: 50%;
+	}
+
+	@media (max-width: 678px) {
+		flex-direction: column;
+		align-items: center;
+		height: auto;
+	}
+
+	@media (max-width: 678px) {
+		.avatar {
+			margin: 0 0 10px 0;
+		}
+	}
+
+	@media (max-width: 572px) {
+		padding: 0 20px;
 	}
 }

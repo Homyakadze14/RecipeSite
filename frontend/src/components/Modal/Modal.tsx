@@ -1,10 +1,5 @@
+import { IModal } from '../../types/interfaces';
 import styles from './Modal.module.scss';
-
-export interface IModal extends React.HTMLAttributes<HTMLDivElement> {
-	isActive: boolean;
-	setIsActive: React.Dispatch<React.SetStateAction<boolean>>;
-	children: React.ReactNode;
-}
 
 export const Modal = ({
 	isActive,
@@ -22,6 +17,9 @@ export const Modal = ({
 				onClick={e => e.stopPropagation()}
 				{...props}
 			>
+				<div className={styles.closeIcon} onClick={() => setIsActive(false)}>
+					&#x2715;
+				</div>
 				{children}
 			</div>
 		</div>

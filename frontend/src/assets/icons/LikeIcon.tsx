@@ -1,6 +1,4 @@
-export interface ILikeIcon {
-	fill?: string;
-}
+import { ILikeIcon } from '../../types/interfaces';
 
 export const LikeIcon = ({ fill = 'none' }: ILikeIcon) => {
 	return (

@@ -20,6 +20,7 @@ export const ChangePasswordPage = () => {
 			<div className={styles.page}>
 				<form>
 					<TextField
+						className={styles.passwordField}
 						direction='row'
 						field='input'
 						label='Изменить пароль:'

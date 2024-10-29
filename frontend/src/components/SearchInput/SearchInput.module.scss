@@ -8,8 +8,15 @@
 	border-radius: 40px;
 	border: 1px solid $black;
 	height: 60px;
-	width: 605px;
+	max-width: 605px;
+	width: 100%;
 	margin-bottom: 50px;
+
+	@media (max-width: 660px) {
+		& {
+			margin-bottom: 30px;
+		}
+	}
 
 	div {
 		width: 24px;
@@ -18,9 +25,15 @@
 	input {
 		border: none;
 		outline: none;
-		padding: 0 8px;
+		padding: 0 8px 0 0;
 		font-size: 20px;
 		width: 100%;
 		color: $black;
+
+		@media (max-width: 340px) {
+			&::placeholder {
+				font-size: 18px;
+			}
+		}
 	}
 }

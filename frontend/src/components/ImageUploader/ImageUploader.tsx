@@ -1,16 +1,10 @@
 import React, { useEffect, useState } from 'react';
-
-interface IImageUploader {
-	onImageUpload: (file: File | null, imageSrc: string | null) => void;
-	selectedImage: File | null;
-
-	label: string;
-}
+import { IImageUploader } from '../../types/interfaces';
+import styles from './ImageUploader.module.scss';
 
 export const ImageUploader = ({
 	onImageUpload,
 	selectedImage,
-
 	label,
 }: IImageUploader) => {
 	const [imagePreview, setImagePreview] = useState('');
@@ -49,48 +43,25 @@ export const ImageUploader = ({
 	}, [selectedImage]);
 
 	return (
-		<div
-			style={{
-				display: 'flex',
-				flexDirection: 'row',
-				alignItems: 'center',
-				gap: 10,
-				marginBottom: 20,
-			}}
-		>
-			<span style={{ fontSize: 28 }}>{label}</span>
+		<div className={styles.container}>
+			<span className={styles.label}>{label}</span>
 			<input
 				type='file'
 				accept='image/*'
 				onChange={handleImageChange}
-				style={{ display: 'none' }}
+				className={styles.input}
 				id='image-upload'
 			/>
-			<label htmlFor='image-upload' style={{ cursor: 'pointer' }}>
+			<label htmlFor='image-upload' className={styles.labelWrapper}>
 				{imagePreview ? (
 					<img
 						src={imagePreview}
 						alt='Preview'
-						style={{
-							width: '100px',
-							height: '100px',
-							objectFit: 'cover',
-							borderRadius: 12,
-						}}
+						className={styles.imagePreview}
 					/>
 				) : (
-					<div
-						style={{
-							width: '100px',
-							height: '100px',
-							border: '1px solid #000',
-							display: 'flex',
-							alignItems: 'center',
-							justifyContent: 'center',
-							borderRadius: 12,
-						}}
-					>
-						<span style={{ fontSize: 20, color: '#00000091' }}>Загрузить</span>
+					<div className={styles.uploadButton}>
+						<span className={styles.uploadButtonText}>Загрузить</span>
 					</div>
 				)}
 			</label>

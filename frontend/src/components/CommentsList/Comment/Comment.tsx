@@ -3,17 +3,11 @@ import { DeleteIcon } from '../../../assets/icons/DeleteIcon';
 import { EditIcon } from '../../../assets/icons/EditIcon';
 import { useAuthStore } from '../../../store/auth/useAuthStore';
 import { useRecipesStore } from '../../../store/recipes/useRecipesStore';
-import { IAuthor } from '../../../store/users/useUsersStore';
+import { IComment } from '../../../types/interfaces';
 import { Button } from '../../Button/Button';
 import { Modal } from '../../Modal/Modal';
 import { TextField } from '../../TextField/TextField';
 import styles from './Comment.module.scss';
-
-export interface IComment {
-	id: number;
-	author: IAuthor;
-	text: string;
-}
 
 export const Comment = ({ id, author, text }: IComment) => {
 	const { icon_url } = author;
@@ -54,23 +48,27 @@ export const Comment = ({ id, author, text }: IComment) => {
 			<p className={styles.text}>{text}</p>
 
 			<Modal isActive={isEditModalActive} setIsActive={setIsEditModalActive}>
-				<h2>Редактировать комментарий</h2>
-				<TextField
-					label='Текст:'
-					direction='column'
-					field='textarea'
-					value={editText}
-					onChange={e => setEditText(e.target.value)}
-					placeholder='Текст комментария'
-				/>
-				<Button
-					onClick={() => {
-						editComment(id, editText);
-						setIsEditModalActive(false);
-					}}
-				>
-					Применить
-				</Button>
+				<div className={styles.modalContainer}>
+					<form>
+						<h2>Редактировать комментарий</h2>
+						<TextField
+							label='Текст:'
+							direction='column'
+							field='textarea'
+							value={editText}
+							onChange={e => setEditText(e.target.value)}
+							placeholder='Текст комментария'
+						/>
+						<Button
+							onClick={() => {
+								editComment(id, editText);
+								setIsEditModalActive(false);
+							}}
+						>
+							Применить
+						</Button>
+					</form>
+				</div>
 			</Modal>
 		</li>
 	);

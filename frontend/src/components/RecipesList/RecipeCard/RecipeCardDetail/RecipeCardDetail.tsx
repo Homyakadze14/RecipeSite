@@ -5,7 +5,8 @@ import { LikeIcon } from '../../../../assets/icons/LikeIcon';
 import { TimeIcon } from '../../../../assets/icons/TimeIcon';
 import { useAuthStore } from '../../../../store/auth/useAuthStore';
 import { useRecipesStore } from '../../../../store/recipes/useRecipesStore';
-import { IRecipe } from '../../../../store/users/useUsersStore';
+import { IRecipe } from '../../../../types/interfaces';
+import { addNewLines } from '../../../../utils/utils';
 import { Button } from '../../../Button/Button';
 import { CommentsList } from '../../../CommentsList/CommentsList';
 import { Complexity } from '../../../Complexity/Complexity';
@@ -27,6 +28,7 @@ export const RecipeCardDetail = ({ recipe }: { recipe: IRecipe }) => {
 	const getRecipeAndComments = useRecipesStore(
 		state => state.getRecipeAndComments
 	);
+
 	const comments = useRecipesStore(state => state.comments);
 	const createComment = useRecipesStore(state => state.createComment);
 
@@ -56,37 +58,38 @@ export const RecipeCardDetail = ({ recipe }: { recipe: IRecipe }) => {
 	};
 
 	return (
-		<li className={styles.card}>
+		<article className={styles.card}>
 			<div>
 				<span className={styles.title}>{title}</span>
 				<div className={styles.imageContainer}>
 					<img src={photos_urls} />
 				</div>
 				<div className={styles.bottomInfoContainer}>
-					<div>
-						<span>
-							Автор: <Link to={`/user/${author?.login}`}>{author?.login}</Link>
-						</span>
+					<div className={styles.authorContainer}>
+						<span className={styles.author}>Автор:</span>
+						<Link to={`/user/${author?.login}`}>{author?.login}</Link>
 					</div>
-					<div className={styles.complexityContainer}>
-						<ChefIcon />
-						<Complexity starsAmount={complexity} />
-					</div>
-					<div>
-						<TimeIcon />
-						<span className={styles.time}>{need_time}</span>
+					<div className={styles.complexityAndTime}>
+						<div className={styles.complexityContainer}>
+							<ChefIcon />
+							<Complexity starsAmount={complexity} />
+						</div>
+						<div>
+							<TimeIcon />
+							<span className={styles.time}>{need_time}</span>
+						</div>
 					</div>
 				</div>
 			</div>
-			<p className={styles.description}>{about}</p>
+			<p className={styles.description}>{addNewLines(about)}</p>
 			<ul className={styles.detailsList}>
 				<li>
 					<h3>Ингредиенты</h3>
-					<p>{ingridients}</p>
+					<p>{addNewLines(ingridients)}</p>
 				</li>
 				<li>
 					<h3>Инструкция приготовления</h3>
-					<p>{instructions}</p>
+					<p>{addNewLines(instructions)}</p>
 				</li>
 			</ul>
 			{isAuth ? (
@@ -124,6 +127,6 @@ export const RecipeCardDetail = ({ recipe }: { recipe: IRecipe }) => {
 				</p>
 			)}
 			<CommentsList comments={comments} />
-		</li>
+		</article>
 	);
 };

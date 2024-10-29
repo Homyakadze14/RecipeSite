@@ -10,12 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "framer-motion": "^11.11.10",
     "js-cookie": "^3.0.5",
-    "react": "^18.2.0",
+    "react": "^18.3.1",
     "react-copy-to-clipboard": "^5.1.0",
-    "react-dom": "^18.2.0",
+    "react-dom": "^18.3.1",
     "react-loading-skeleton": "^3.5.0",
     "react-router-dom": "^6.26.2",
+    "react-transition-group": "^4.4.5",
     "sass": "^1.78.0",
     "zustand": "^4.5.5"
   },
@@ -24,6 +26,8 @@
     "@types/react": "^18.2.56",
     "@types/react-copy-to-clipboard": "^5.0.7",
     "@types/react-dom": "^18.2.19",
+    "@types/react-flip-move": "^2.9.12",
+    "@types/react-transition-group": "^4.4.11",
     "@typescript-eslint/eslint-plugin": "^7.0.2",
     "@typescript-eslint/parser": "^7.0.2",
     "@vitejs/plugin-react": "^4.2.1",

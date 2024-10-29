@@ -1,17 +1,61 @@
 @import './../../styles/variables.scss';
 
+@mixin description {
+	font-size: 25px;
+	max-height: 232px;
+	height: 100%;
+	max-width: 572px;
+	width: 100%;
+	overflow-y: auto;
+	word-break: break-word;
+	overflow-wrap: break-word;
+	hyphens: auto;
+
+	@media (max-width: 700px) {
+		max-width: 660px;
+	}
+}
+
+@mixin nameAndButtonContainer {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	max-width: 572px;
+	width: 100%;
+	align-items: center;
+	margin-bottom: 16px;
+}
+
+@mixin inner {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	gap: 20px;
+	max-width: 680px;
+	width: 100%;
+}
+
+@mixin name($fonsSize) {
+	font-size: $fonsSize;
+	font-weight: 700;
+	margin-right: 8px;
+	word-break: break-word;
+	hyphens: auto;
+}
+
 .userCard {
 	display: flex;
 	flex-direction: row;
 	height: 300px;
 	margin-bottom: 30px;
-	width: 900px;
+	max-width: 900px;
+	width: 100%;
 
 	img {
 		width: 300px;
 		height: 300px;
 		border-radius: 12px;
-		margin-right: 38px;
+		margin-right: 28px;
 		object-fit: cover;
 	}
 
@@ -19,39 +63,29 @@
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
-		width: 562px;
+		max-width: 572px;
+		width: 100%;
 	}
 
-	.nameAndButtonContainer {
+	@media (max-width: 400px) {
+		align-items: center;
+	}
+
+	.nameAndEditButtonContainer {
 		display: flex;
 		flex-direction: row;
 		justify-content: space-between;
+		max-width: 572px;
 		width: 100%;
 		align-items: center;
 		margin-bottom: 16px;
 
-		div {
-			display: flex;
-			flex-direction: row;
-			justify-content: space-between;
-			gap: 20px;
-			width: 100%;
-
-			span {
-				font-size: 40px;
-				font-weight: 700;
-			}
-
-			.subscribeButton {
-				width: 180px;
-				font-size: 14px;
-				text-transform: uppercase;
-				padding: 10px 20px;
-				border-radius: 8px;
-				letter-spacing: 3px;
-				font-weight: 500;
-				background-color: $brightRed;
-			}
+		.nameEdit {
+			font-size: 40px;
+			font-weight: 700;
+			margin-right: 8px;
+			word-break: break-word;
+			hyphens: auto;
 		}
 
 		.editButton {
@@ -68,17 +102,165 @@
 		}
 	}
 
-	p {
-		font-size: 25px;
-		min-height: 234px;
-		overflow-y: auto;
-		word-break: break-word;
-		overflow-wrap: break-word;
-		hyphens: auto;
+	.nameAndEditButtonContainer {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		max-width: 572px;
+		width: 100%;
+		align-items: center;
+		margin-bottom: 16px;
+
+		.editInner {
+			@include inner;
+		}
+
+		.editButton {
+			width: 40px;
+			height: 40px;
+			background-color: transparent;
+			border: none;
+			transition: 0.3s;
+
+			&:hover {
+				opacity: 0.6;
+				cursor: pointer;
+			}
+		}
+	}
+
+	.nameEdit {
+		@include name(40px);
+
+		@media (max-width: 880px) {
+			& {
+				font-size: 36px !important;
+			}
+		}
+	}
+
+	.nameSubscribe {
+		@include name(36px);
+
+		@media (max-width: 680px) {
+			& {
+				font-size: 38px;
+			}
+		}
+	}
+
+	.nameAndSubscribeButtonContainer {
+		@include nameAndButtonContainer;
+
+		.subscribeInner {
+			@include inner;
+
+			.subscribeButton {
+				width: 154px;
+				font-size: 12px;
+				text-transform: uppercase;
+				border-radius: 8px;
+				letter-spacing: 3px;
+				font-weight: 500;
+				background-color: $brightRed;
+				height: 46px;
+
+				@media (max-width: 700px) {
+					display: block;
+				}
+
+				@media (max-width: 640px) {
+					& {
+						display: none;
+					}
+				}
+			}
+
+			@media (max-width: 850px) {
+				& {
+					flex-direction: column;
+					gap: 8px;
+				}
+			}
+
+			@media (max-width: 700px) {
+				& {
+					flex-direction: row;
+					gap: 20px;
+				}
+			}
+
+			@media (max-width: 700px) {
+				& {
+					max-width: 660px;
+				}
+			}
+		}
+
+		@media (max-width: 700px) {
+			& {
+				max-width: 660px;
+			}
+		}
+	}
+
+	.descriptionEdit {
+		@include description;
+	}
+
+	.descriptionSubscribe {
+		@include description;
+
+		@media (max-width: 850px) {
+			max-height: 180px;
+		}
+	}
+
+	.subscribeButtonBottom {
+		display: none;
+		width: 180px;
+		font-size: 14px;
+		text-transform: uppercase;
+		padding: 10px 20px;
+		border-radius: 8px;
+		letter-spacing: 3px;
+		font-weight: 500;
+		background-color: $brightRed;
+		height: 46px;
+		margin-top: 20px;
+
+		@media (max-width: 640px) {
+			display: block;
+		}
+	}
+
+	.modalContainer {
+		display: flex;
+		flex-direction: column;
+		max-width: 430px;
+
+		form {
+			.nameField {
+				@media (max-width: 520px) {
+					& {
+						flex-direction: column;
+						align-items: flex-start;
+					}
+				}
+			}
+		}
 	}
 
 	h3 {
+		text-align: center;
+		font-size: 40px;
 		margin-bottom: 20px;
+
+		@media (max-width: 440px) {
+			& {
+				font-size: 36px;
+			}
+		}
 	}
 
 	.changePasswordContainer {
@@ -86,9 +268,47 @@
 		align-items: center;
 		gap: 20px;
 		margin-bottom: 30px;
+
+		@media (max-width: 520px) {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 8px;
+		}
+
+		@media (max-width: 400px) {
+			& button {
+				font-size: 24px;
+			}
+		}
 	}
 
 	.saveButton {
 		background-color: $green;
+	}
+
+	@media (max-width: 700px) {
+		& {
+			flex-direction: column;
+			align-items: center;
+			height: auto;
+		}
+
+		& img {
+			margin: 0 0 10px 0;
+		}
+
+		& p {
+			height: auto;
+			max-width: 720px;
+		}
+
+		& .infoContainer,
+		.nameAndButtonContainer {
+			max-width: 720px;
+
+			> div {
+				max-width: 720px;
+			}
+		}
 	}
 }

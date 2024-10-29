@@ -21,6 +21,47 @@
 			&.active {
 				border-bottom: 3px solid $brightOrange;
 			}
+
+			@media (max-width: 490px) {
+				font-size: 22px;
+				padding: 8px 18px;
+			}
+
+			@media (max-width: 425px) {
+				& {
+					padding: 8px 14px;
+				}
+			}
+
+			@media (max-width: 410px) {
+				& {
+					padding: 8px 12px;
+				}
+			}
+
+			@media (max-width: 395px) {
+				& {
+					font-size: 20px;
+				}
+			}
+
+			@media (max-width: 365px) {
+				& {
+					padding: 8px 10px;
+				}
+			}
+
+			@media (max-width: 355px) {
+				& {
+					font-size: 18px;
+				}
+			}
+
+			@media (max-width: 335px) {
+				& {
+					padding: 8px;
+				}
+			}
 		}
 	}
 }

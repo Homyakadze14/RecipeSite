@@ -1,6 +1,4 @@
-export interface IStarIcon extends React.SVGProps<SVGSVGElement> {
-	fill?: string;
-}
+import { IStarIcon } from '../../types/interfaces';
 
 export const StarIcon = ({
 	fill = '#DC780B',

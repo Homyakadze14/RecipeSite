@@ -1,14 +1,8 @@
-import { ChangeEvent, useState } from 'react';
+import { useState } from 'react';
 import { HideIcon } from '../../assets/icons/HideIcon';
 import { ShowIcon } from '../../assets/icons/ShowIcon';
+import { IInput } from '../../types/interfaces';
 import styles from './Input.module.scss';
-
-export interface IInput {
-	value: string;
-	onChange: (event: ChangeEvent<HTMLInputElement>) => void;
-	placeholder?: string;
-	type?: string;
-}
 
 export const Input = ({
 	value,
@@ -26,7 +20,7 @@ export const Input = ({
 				placeholder={placeholder}
 				className={styles.input}
 				type={isPasswordVisible ? 'text' : type}
-				style={{ paddingRight: type === 'password' ? 100 : 20 }}
+				style={{ paddingRight: type === 'password' ? 65 : 20 }}
 			/>
 			{type === 'password' && (
 				<button

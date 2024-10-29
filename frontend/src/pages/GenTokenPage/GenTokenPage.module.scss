@@ -4,7 +4,13 @@
 	display: flex;
 	flex-direction: column;
 	max-width: 900px;
-	width: 900px;
+	width: 100%;
+
+	@media (max-width: 940px) {
+		& {
+			padding: 0 20px;
+		}
+	}
 
 	.title {
 		font-size: 28px;
@@ -17,12 +23,24 @@
 		align-items: center;
 		gap: 30px;
 
+		@media (max-width: 800px) {
+			& {
+				gap: 20px;
+			}
+		}
+
+		@media (max-width: 600px) {
+			& {
+				gap: 10px;
+			}
+		}
+
 		.token {
 			font-size: 34px;
 			font-weight: 700;
 			overflow-x: auto;
-			white-space: no-wrap;
-			width: 900px;
+			white-space: nowrap;
+			word-break: keep-all;
 		}
 
 		.copyButton {
@@ -51,5 +69,6 @@
 
 	.genButton {
 		margin-top: 50px;
+		background-color: $brightOrange;
 	}
 }

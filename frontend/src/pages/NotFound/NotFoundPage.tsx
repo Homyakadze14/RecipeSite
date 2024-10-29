@@ -4,7 +4,7 @@ import { Layout } from '../../layout/Layout';
 import styles from './NotFoundPage.module.scss';
 
 export const NotFoundPage = () => {
-	const navigation = useNavigate();
+	const navigate = useNavigate();
 
 	return (
 		<Layout>
@@ -15,7 +15,7 @@ export const NotFoundPage = () => {
 					<br />
 					Возвращайтесь на главную страничку скорее, вас там ждут новые рецепты.
 				</p>
-				<Button className={styles.button} onClick={() => navigation('/')}>
+				<Button className={styles.button} onClick={() => navigate('/')}>
 					Вернуться на главную
 				</Button>
 			</div>
