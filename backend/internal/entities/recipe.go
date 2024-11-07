@@ -8,12 +8,12 @@ import (
 type Recipe struct {
 	ID           int       `json:"id"`
 	UserID       int       `json:"creator_user_id"`
-	Title        string    `json:"title" binding:"required,min=3,max=50"`
-	About        string    `json:"about" binding:"required,max=2500"`
+	Title        string    `json:"title" binding:"required,min=3,max=200"`
+	About        string    `json:"about" binding:"required,max=10000"`
 	Complexitiy  int       `json:"complexity" binding:"required,min=1,max=3"  enums:"1,2,3"`
 	NeedTime     string    `json:"need_time" binding:"required"`
-	Ingridients  string    `json:"ingridients" binding:"required,max=1500"`
-	Instructions string    `json:"instructions" binding:"required,max=2000"`
+	Ingridients  string    `json:"ingridients" binding:"required,max=10000"`
+	Instructions string    `json:"instructions" binding:"required,max=10000"`
 	PhotosUrls   string    `json:"photos_urls"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
@@ -23,11 +23,11 @@ type RecipeWithAuthor struct {
 	ID           int       `json:"id"`
 	UserID       int       `json:"creator_user_id"`
 	Title        string    `json:"title" binding:"required,min=3,max=50"`
-	About        string    `json:"about" binding:"required,max=2500"`
+	About        string    `json:"about" binding:"required,max=10000"`
 	Complexitiy  int       `json:"complexity" binding:"required,min=1,max=3"  enums:"1,2,3"`
 	NeedTime     string    `json:"need_time" binding:"required"`
-	Ingridients  string    `json:"ingridients" binding:"required,max=1500"`
-	Instructions string    `json:"instructions" binding:"required,max=2000"`
+	Ingridients  string    `json:"ingridients" binding:"required,max=10000"`
+	Instructions string    `json:"instructions" binding:"required,max=10000"`
 	PhotosUrls   string    `json:"photos_urls"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
@@ -40,11 +40,11 @@ type GetRecipeAuthor struct {
 
 type CreateRecipe struct {
 	Title        string          `json:"title" binding:"required,min=3,max=50"  form:"title"`
-	About        string          `json:"about" binding:"required,max=2500"  form:"about"`
+	About        string          `json:"about" binding:"required,max=10000"  form:"about"`
 	Complexitiy  int             `json:"complexity" binding:"required,min=1,max=3"  enums:"1,2,3" form:"complexity"`
 	NeedTime     string          `json:"need_time" binding:"required"  form:"need_time"`
-	Ingridients  string          `json:"ingridients" binding:"required,max=1500"  form:"ingridients"`
-	Instructions string          `json:"instructions" binding:"required,max=2000" form:"instructions"`
+	Ingridients  string          `json:"ingridients" binding:"required,max=10000"  form:"ingridients"`
+	Instructions string          `json:"instructions" binding:"required,max=10000" form:"instructions"`
 	Photos       []io.ReadSeeker `json:"-"`
 }
 
@@ -65,11 +65,11 @@ func (r *CreateRecipe) ToRecipe() *Recipe {
 
 type UpdateRecipe struct {
 	Title        string          `json:"title" binding:"omitempty,min=3,max=50"  form:"title"`
-	About        string          `json:"about" binding:"omitempty,max=2500"  form:"about"`
+	About        string          `json:"about" binding:"omitempty,max=10000"  form:"about"`
 	Complexitiy  int             `json:"complexity" binding:"omitempty,min=1,max=3" enums:"1,2,3" form:"complexity"`
 	NeedTime     string          `json:"need_time" binding:"omitempty"  form:"need_time"`
-	Ingridients  string          `json:"ingridients" binding:"omitempty,max=1500"  form:"ingridients"`
-	Instructions string          `json:"instructions" binding:"required,max=2000" form:"instructions"`
+	Ingridients  string          `json:"ingridients" binding:"omitempty,max=10000"  form:"ingridients"`
+	Instructions string          `json:"instructions" binding:"required,max=10000" form:"instructions"`
 	Photos       []io.ReadSeeker `json:"-"`
 }
 
